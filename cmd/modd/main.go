@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/cortesi/termlog"
-	modd "github.com/dottedmag/ppow"
+	"github.com/dottedmag/ppow"
 	"github.com/dottedmag/ppow/notify"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -47,11 +47,11 @@ var debug = kingpin.Flag("debug", "Debugging for modd development").
 
 func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
-	kingpin.Version(modd.Version)
+	kingpin.Version(ppow.Version)
 	kingpin.Parse()
 
 	if *ignores {
-		for _, patt := range modd.CommonExcludes {
+		for _, patt := range ppow.CommonExcludes {
 			fmt.Println(patt)
 		}
 		os.Exit(0)
@@ -75,7 +75,7 @@ func main() {
 		notifiers = append(notifiers, &notify.BeepNotifier{})
 	}
 
-	mr, err := modd.NewModRunner(*file, log, notifiers, !(*noconf))
+	mr, err := ppow.NewModRunner(*file, log, notifiers, !(*noconf))
 	if err != nil {
 		log.Shout("%s", err)
 		return
