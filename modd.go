@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cortesi/modd/conf"
-	"github.com/cortesi/modd/notify"
-	"github.com/cortesi/modd/shell"
 	"github.com/cortesi/moddwatch"
 	"github.com/cortesi/termlog"
+	"github.com/dottedmag/ppow/conf"
+	"github.com/dottedmag/ppow/notify"
+	"github.com/dottedmag/ppow/shell"
 )
 
 // Version is the modd release version
