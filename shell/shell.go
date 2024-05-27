@@ -14,14 +14,13 @@ import (
 
 var ValidShells = map[string]bool{
 	"bash":       true,
-	"modd":       true,
 	"powershell": true,
 	"sh":         true,
 }
 
 var shellTesting bool
 
-var Default = "modd"
+var Default = "sh"
 
 type Executor struct {
 	Shell   string
@@ -186,13 +185,6 @@ func CheckShell(shell string) (string, error) {
 		} else {
 			return "", fmt.Errorf("powershell/pwsh not on path")
 		}
-	case "modd":
-		// When testing, we're running under a special compiled test executable,
-		// so we look for an instance of modd on our path.
-		if shellTesting {
-			return exec.LookPath("modd")
-		}
-		return os.Executable()
 	default:
 		return exec.LookPath(shell)
 	}
@@ -207,8 +199,6 @@ func makeCommand(shell string, command string, dir string) (*exec.Cmd, error) {
 	switch shell {
 	case "bash", "sh":
 		cmd = exec.Command(shcmd, "-c", command)
-	case "modd":
-		cmd = exec.Command(shcmd, "--exec", command)
 	case "powershell":
 		cmd = exec.Command(shcmd, "-Command", command)
 	}
