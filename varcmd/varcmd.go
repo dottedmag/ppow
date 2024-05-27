@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cortesi/modd/conf"
 	"github.com/cortesi/moddwatch"
+	"github.com/dottedmag/ppow/conf"
 )
 
 var name = regexp.MustCompile(`(\\*)@\w+`)

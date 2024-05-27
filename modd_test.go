@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cortesi/modd/conf"
-	"github.com/cortesi/modd/utils"
 	"github.com/cortesi/moddwatch"
 	"github.com/cortesi/termlog"
+	"github.com/dottedmag/ppow/conf"
+	"github.com/dottedmag/ppow/utils"
 )
 
 const timeout = 5 * time.Second

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cortesi/modd"
-	"github.com/cortesi/modd/notify"
 	"github.com/cortesi/termlog"
+	modd "github.com/dottedmag/ppow"
+	"github.com/dottedmag/ppow/notify"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"mvdan.cc/sh/v3/interp"
 	"mvdan.cc/sh/v3/syntax"

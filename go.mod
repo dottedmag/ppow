@@ -1,4 +1,4 @@
-module github.com/cortesi/modd
+module github.com/dottedmag/ppow
 
 go 1.14
 
