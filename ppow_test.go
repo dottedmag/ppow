@@ -1,4 +1,4 @@
-package modd
+package ppow
 
 import (
 	"io/ioutil"
