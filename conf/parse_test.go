@@ -279,7 +279,7 @@ var parseTests = []struct {
 		},
 	},
 	{
-		"./path/to/modd.conf",
+		"./path/to/ppow.conf",
 		"",
 		&Config{
 			variables: map[string]string{
@@ -288,7 +288,7 @@ var parseTests = []struct {
 		},
 	},
 	{
-		"./path/to/modd.conf",
+		"./path/to/ppow.conf",
 		"{ indir: @confdir/foo\n }",
 		&Config{
 			Blocks: []Block{

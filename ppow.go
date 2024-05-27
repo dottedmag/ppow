@@ -15,8 +15,8 @@ import (
 	"github.com/dottedmag/ppow/shell"
 )
 
-// Version is the modd release version
-const Version = "0.8"
+// Version is the ppow release version
+const Version = "0.9-pre"
 
 const lullTime = time.Millisecond * 100
 
@@ -52,7 +52,7 @@ var CommonExcludes = []string{
 	"**/node_modules/**",
 }
 
-// ModRunner coordinates running the modd command
+// ModRunner coordinates running the ppow command
 type ModRunner struct {
 	Log        termlog.TermLog
 	Config     *conf.Config
@@ -220,7 +220,7 @@ func (mr *ModRunner) runOnChan(modchan chan *moddwatch.Mod, readyCallback func()
 	return nil
 }
 
-// Run is the top-level runner for modd
+// Run is the top-level runner for ppow
 func (mr *ModRunner) Run() error {
 	for {
 		modchan := make(chan *moddwatch.Mod, 1024)

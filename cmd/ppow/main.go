@@ -10,7 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const modfile = "./modd.conf"
+const modfile = "./ppow.conf"
 
 var file = kingpin.Flag(
 	"file",
@@ -41,7 +41,7 @@ var prep = kingpin.Flag("prep", "Run prep commands and exit").
 	Short('p').
 	Bool()
 
-var debug = kingpin.Flag("debug", "Debugging for modd development").
+var debug = kingpin.Flag("debug", "Debugging for ppow development").
 	Default("false").
 	Bool()
 

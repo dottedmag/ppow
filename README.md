@@ -1,17 +1,17 @@
-Modd is a developer tool that triggers commands and manages daemons in response
+ppow is a developer tool that triggers commands and manages daemons in response
 to filesystem changes.
 
-If you use modd, you should also look at
+If you use ppow, you should also look at
 [devd](https://github.com/cortesi/devd), a compact HTTP daemon for developers.
-Devd integrates with modd, allowing you to trigger in-browser livereload with
-modd.
+Devd integrates with ppow, allowing you to trigger in-browser livereload with
+ppow.
 
-The repo contains a set of example *modd.conf* files that you can look at for a
-quick idea of what modd can do:
+The repo contains a set of example *ppow.conf* files that you can look at for a
+quick idea of what ppow can do:
 
 Example                                      | Description
 -------------------------------------------- | -------
-[frontend.conf](./examples/frontend.conf)    | A front-end project with React + Browserify + Babel. Modd and devd replace many functions of Gulp/Grunt.
+[frontend.conf](./examples/frontend.conf)    | A front-end project with React + Browserify + Babel. ppow and devd replace many functions of Gulp/Grunt.
 [go.conf](./examples/go.conf)                | Live unit tests for Go.
 [python.conf](./examples/python.conf)        | Python + Redis, with devd managing livereload.
 
@@ -19,18 +19,18 @@ Example                                      | Description
 
 # Install
 
-Modd is a single binary with no external dependencies, released for OSX,
+ppow is a single binary with no external dependencies, released for OSX,
 Windows, Linux, FreeBSD, NetBSD and OpenBSD. Go to the [releases
 page](https://github.com/dottedmag/ppow/releases/latest), download the package for
 your OS, and copy the binary to somewhere on your PATH.
 
-Alternatively, with Go 1.17+ installed, you can install `modd` directly using `go install`. Please note that CGO is required, so if you happen to have it disabled you will need to prepend the `CGO_ENABLED=1` environment variable.
+Alternatively, with Go 1.17+ installed, you can install `ppow` directly using `go install`. Please note that CGO is required, so if you happen to have it disabled you will need to prepend the `CGO_ENABLED=1` environment variable.
 
-    $ go install github.com/dottedmag/ppow/cmd/modd@latest
+    $ go install github.com/dottedmag/ppow/cmd/ppow@latest
 
 # Quick start
 
-Put this in a file called *modd.conf*:
+Put this in a file called *ppow.conf*:
 
 ```
 **/*.go {
@@ -38,23 +38,23 @@ Put this in a file called *modd.conf*:
 }
 ```
 
-Now run modd like so:
+Now run ppow like so:
 
 ```
-$ modd
+$ ppow
 ```
 
-The first time modd is run, it will run the tests of all Go modules. Whenever
+The first time ppow is run, it will run the tests of all Go modules. Whenever
 any file with the .go extension is modified, the "go test" command will be run
 only on the enclosing module.
 
 
 # Details
 
-On startup, modd looks for a file called *modd.conf* in the current directory.
+On startup, ppow looks for a file called *ppow.conf* in the current directory.
 This file has a simple but powerful syntax - one or more blocks of commands,
 each of which can be triggered on changes to files matching a set of file
-patterns. The *modd.conf* file is meant to be portable, and can safely be
+patterns. The *ppow.conf* file is meant to be portable, and can safely be
 checked into source repositories. Functionality that users will want to
 customize (like desktop notifications) is controlled through command-line
 flags.
@@ -70,7 +70,7 @@ commands succeed, any daemons in the block are restarted, also in order of
 occurrence. If multiple blocks are triggered by the same set of changes, they
 too run in order, from top to bottom.
 
-Here's a modified version of the *modd.conf* file I use when hacking on devd.
+Here's a modified version of the *ppow.conf* file I use when hacking on devd.
 It runs the test suite whenever a .go file changes, builds devd whenever a
 non-test file is changed, and keeps a test instance running throughout.
 
@@ -87,28 +87,28 @@ non-test file is changed, and keeps a test instance running throughout.
 ```
 
 The **@dirmods** variable expands to a properly escaped list of all directories
-containing changed files. When modd is first run, this includes all directories
-containing matching files. So, this means that modd will run all tests on
+containing changed files. When ppow is first run, this includes all directories
+containing matching files. So, this means that ppow will run all tests on
 startup, and then subsequently run the tests only for the affected module
 whenever there's a change. There's a corresponding **@mods** variable that
 contains all changed files.
 
 Note the *+sigterm* flag to the daemon command. When devd receives a SIGHUP
-(the default signal sent by modd), it triggers a browser livereload, rather
+(the default signal sent by ppow), it triggers a browser livereload, rather
 than exiting. This is what you want when devd is being used to serve a web
 project you're hacking on, but when developing devd _itself_, we actually want
-it to exit and restart to pick up changes. We therefore tell modd to send a
+it to exit and restart to pick up changes. We therefore tell ppow to send a
 SIGTERM to the daemon instead, which causes devd to exit and be restarted by
-modd.
+ppow.
 
-By default modd interprets commands using a [built-in POSIX-like
+By default ppow interprets commands using a [built-in POSIX-like
 shell](https://github.com/mvdan/sh). Some external shells are also supported,
-and can be used by setting `@shell` variable in your "modd.conf" file.
+and can be used by setting `@shell` variable in your "ppow.conf" file.
 
 
 # File watch patterns
 
-Modd batches up changes until there is a lull in filesystem activity - this
+ppow batches up changes until there is a lull in filesystem activity - this
 means that coherent processes like compilation and rendering that touch many
 files are likely to trigger commands only once. Patterns therefore match on a
 batch of changed files - when the first match in a batch is seen, the block is
@@ -144,7 +144,7 @@ directory.
 ** !**/*.html !"docs/**"
 ```
 
-Negations are applied after all positive patterns - that is, modd collects all
+Negations are applied after all positive patterns - that is, ppow collects all
 files matching the positive patterns, then removes files matching the negation
 patterns.
 
@@ -152,7 +152,7 @@ patterns.
 
 Common nuisance files like VCS directories, swap files, and so forth are
 ignored by default. You can list the set of ignored patterns using the **-i**
-flag to the modd command. The default ignore patterns can be disabled using the
+flag to the ppow command. The default ignore patterns can be disabled using the
 special **+noignore** flag, like so:
 
 ```
@@ -165,7 +165,7 @@ special **+noignore** flag, like so:
 
 If no match pattern is specified, prep commands run once only at startup, and
 daemons are restarted if they exit, but won't ever be explicitly signalled to
-restart by modd.
+restart by ppow.
 
 ```
 {
@@ -175,7 +175,7 @@ restart by modd.
 
 ## Symlinks
 
-Modd does not implicitly traverse symlinks. To monitor a symlink, split the path
+ppow does not implicitly traverse symlinks. To monitor a symlink, split the path
 specification and the matching pattern, like this:
 
 ```
@@ -269,14 +269,14 @@ The following variables are automatically generated for prep commands
 Variable      | Meaning
 ------------- | -------
 @mods         | On first run, all files matching the block patterns. On subsequent change, a list of all modified files.
-@confdir      | The absolute path of the directory that contains the current modd config file.
+@confdir      | The absolute path of the directory that contains the current ppow config file.
 @dirmods      | On first run, all directories containing files matching the block patterns. On subsequent change, a list of all directories containing modified files.
 
 All file names in variables are relative to the current directory, and
 shell-escaped for safety. All paths are in slash-delimited form on all
 platforms.
 
-Given a config file like this, modd will run *eslint* on all .js files when
+Given a config file like this, ppow will run *eslint* on all .js files when
 started, and then after that only run *eslint* on files if they change:
 
 ```
@@ -285,7 +285,7 @@ started, and then after that only run *eslint* on files if they change:
 }
 ```
 
-By default, prep commands are executed on the initial run of modd. The
+By default, prep commands are executed on the initial run of ppow. The
 `+onchange` option can be used to skip the initial run, and only execute when
 there is a detected change.
 
@@ -299,10 +299,10 @@ there is a detected change.
 
 ## Daemon commands
 
-Daemons are executed on startup, and are restarted by modd whenever they exit.
-When a block containing a daemon command is triggered, modd sends a signal to
+Daemons are executed on startup, and are restarted by ppow whenever they exit.
+When a block containing a daemon command is triggered, ppow sends a signal to
 the daemon process group. If the signal causes the daemon to exit, it is
-immediately restarted by modd - however, it's also common for daemons to do
+immediately restarted by ppow - however, it's also common for daemons to do
 other useful things like reloading configuration in response to signals.
 
 The default signal used is SIGHUP, but the signal can be controlled using
@@ -322,12 +322,12 @@ The following variables are automatically generated for prep commands
 
 Variable      | Meaning
 ------------- | -------
-@confdir      | The absolute path of the directory that contains the current modd config file.
+@confdir      | The absolute path of the directory that contains the current ppow config file.
 
 
 ## Controlling log headers
 
-Modd outputs a short header on the terminal to show which command is responsible
+ppow outputs a short header on the terminal to show which command is responsible
 for output. This header is calculated from the first non-whitespace line of the
 command - backslash escapes are removed from the end of the line, comment
 characters are removed from the beginning, and whitespace is stripped. Using the
@@ -355,7 +355,7 @@ display name.
 ## Options
 
 The only block option at the moment is **indir**, which controls the execution
-directory of a block. Modd will change to this directory before executing
+directory of a block. ppow will change to this directory before executing
 commands and daemons, and change back to the previous directory afterwards.
 
 The directory specification follows the same conventions as commands, and can
@@ -392,21 +392,17 @@ You can use variables in commands like so:
 ```
 
 There is a special "@shell" variable that determines which shell is used to
-execute commands. Valid values are `modd` (the default), `bash`, `sh` and
+execute commands. Valid values are `bash`, `sh` (the default) and
 `powershell`. This variable is set as follows:
 
 ```
 @shell = bash
 ```
 
-Avoid using the `@shell` variable if you can - using the built-in shell ensures
-that `modd.conf` files remain portable across platforms.
-
-
 # Desktop Notifications
 
-When the **-n** flag is specified, modd sends anything sent to *stderr* from any
-prep command that exits abnormally to a desktop notifier. Since modd commands
+When the **-n** flag is specified, ppow sends anything sent to *stderr* from any
+prep command that exits abnormally to a desktop notifier. Since ppow commands
 are shell scripts, you can redirect or manipulate output to entirely customise
 what gets sent to notifiers as needed.
 
@@ -425,7 +421,7 @@ website](http://growl.info/downloads.php).
 ## Libnotify
 
 Libnotify is a general notification framework available on most Unix-like
-systems. Modd uses the **notify-send** command to send notifications using
+systems. ppow uses the **notify-send** command to send notifications using
 libnotify. You'll need to use your system package manager to install
 **libnotify**.
 
@@ -433,21 +429,21 @@ libnotify. You'll need to use your system package manager to install
 # Colour output in process logs
 
 Some programs that have colourised output when run on the command-line don't
-emit colour when run under modd. Users might assume that modd is stripping the
+emit colour when run under ppow. Users might assume that ppow is stripping the
 colour from the command output, but that is not the case. Well-behaved terminal
 programs check whether they are connected to a terminal, and if not, disable
 colour codes in their own output. It is possible to trick a program into
 believing that a terminal is present through pseudo-terminal emulation, but this
 is complex and platform dependent and is not a good fit for a simple, reliable
-tool like modd.
+tool like ppow.
 
 This leaves users with two options:
 
 - Many tools that produce colour output also have a flag to force colour when no
   terminal is detected, and many logging libraries with human-friendly output do
   the same. The simplest solution is to work out how to force output and
-  explicitly specify this in your modd configuration.
-- There are platform-specific tools you can interpose between modd and the
+  explicitly specify this in your ppow configuration.
+- There are platform-specific tools you can interpose between ppow and the
   subprocess to emulate a terminal. One example is
   [unbuffer](https://linux.die.net/man/1/unbuffer) on Linux.
 
