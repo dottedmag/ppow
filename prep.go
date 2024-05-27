@@ -73,7 +73,7 @@ func RunPreps(
 		if err != nil {
 			if pe, ok := err.(ProcError); ok {
 				for _, n := range notifiers {
-					n.Push("modd error", pe.Output, "")
+					n.Push("ppow error", pe.Output, "")
 				}
 			}
 			return err

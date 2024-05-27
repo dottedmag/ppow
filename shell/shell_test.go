@@ -93,13 +93,13 @@ func testCmd(t *testing.T, shell string, ct cmdTest) {
 var shellTests = []cmdTest{
 	{
 		name:   "echosuccess",
-		cmd:    "echo moddtest; true",
-		logHas: "moddtest",
+		cmd:    "echo ppowtest; true",
+		logHas: "ppowtest",
 	},
 	{
 		name:    "echofail",
-		cmd:     "echo moddtest; false",
-		logHas:  "moddtest",
+		cmd:     "echo ppowtest; false",
+		logHas:  "ppowtest",
 		procerr: true,
 	},
 	{
@@ -109,23 +109,23 @@ var shellTests = []cmdTest{
 	},
 	{
 		name:    "stderr-posix",
-		cmd:     "echo moddstderr >&2",
+		cmd:     "echo ppowstderr >&2",
 		bufferr: true,
-		buffHas: "moddstderr",
-		shells:  []string{"modd", "sh", "bash"},
+		buffHas: "ppowstderr",
+		shells:  []string{"ppow", "sh", "bash"},
 	},
 	{
 		name:    "stderr-powershell",
-		cmd:     "Write-Error \"moddstderr\"",
+		cmd:     "Write-Error \"ppowstderr\"",
 		bufferr: true,
 		procerr: true,
-		buffHas: "moddstderr",
+		buffHas: "ppowstderr",
 		shells:  []string{"powershell"},
 	},
 	{
 		name:    "kill",
-		cmd:     "echo moddtest; echo; sleep 999999",
-		logHas:  "moddtest",
+		cmd:     "echo ppowtest; echo; sleep 999999",
+		logHas:  "ppowtest",
 		kill:    true,
 		procerr: true,
 	},
@@ -137,14 +137,12 @@ func TestShells(t *testing.T) {
 	var shells []string
 	if runtime.GOOS == "windows" {
 		shells = []string{
-			"modd",
 			"powershell",
 		}
 	} else {
 		shells = []string{
 			"sh",
 			"bash",
-			"modd",
 			"powershell",
 		}
 	}
@@ -185,9 +183,9 @@ func TestCaseInsensitivePath(t *testing.T) {
 		cmd:    "echo $PATH",
 		logHas: "trigger-text",
 	}
-	sh := "modd"
+	sh := "ppow"
 	t.Run(
-		"modd/path-capitalization",
+		"ppow/path-capitalization",
 		func(t *testing.T) {
 			if _, err := CheckShell(sh); err != nil {
 				t.Skipf("skipping - %s", err)

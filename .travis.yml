@@ -13,7 +13,7 @@ os:
 
 install:
     - go get -t -v ./...
-    - go install ./cmd/modd
+    - go install ./cmd/ppow
 
 script:
     - go test -v -race ./...

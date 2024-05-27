@@ -5,7 +5,7 @@ import (
 	"os/exec"
 )
 
-const prog = "modd"
+const prog = "ppow"
 
 func hasExecutable(name string) bool {
 	_, err := exec.LookPath(name)
