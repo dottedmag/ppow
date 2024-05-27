@@ -1,17 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/cortesi/termlog"
 	modd "github.com/dottedmag/ppow"
 	"github.com/dottedmag/ppow/notify"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"mvdan.cc/sh/v3/interp"
-	"mvdan.cc/sh/v3/syntax"
 )
 
 const modfile = "./modd.conf"
@@ -49,40 +45,10 @@ var debug = kingpin.Flag("debug", "Debugging for modd development").
 	Default("false").
 	Bool()
 
-var exec = kingpin.Flag("exec", "Execute a command in the built-in shell").
-	String()
-
 func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Version(modd.Version)
 	kingpin.Parse()
-
-	if *exec != "" {
-		parser := syntax.NewParser()
-		prog, err := parser.Parse(strings.NewReader(*exec), "")
-		if err != nil {
-			os.Exit(1)
-		}
-
-		runner, err := interp.New(
-			interp.StdIO(os.Stdin, os.Stdout, os.Stderr),
-			func(r *interp.Runner) error {
-				return nil
-			},
-		)
-		if err != nil {
-			os.Exit(1)
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		runner.Reset()
-		err = runner.Run(ctx, prog)
-		if err != nil {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
 
 	if *ignores {
 		for _, patt := range modd.CommonExcludes {

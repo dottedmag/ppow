@@ -9,6 +9,7 @@ require (
 	github.com/cortesi/termlog v0.0.0-20210222042314-a1eec763abec
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/google/go-cmp v0.5.9
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
@@ -16,5 +17,4 @@ require (
 	golang.org/x/net v0.4.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	mvdan.cc/sh/v3 v3.6.0
 )
