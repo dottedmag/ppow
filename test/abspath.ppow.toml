@@ -13,5 +13,5 @@
 include = ["/tmp/abspath/abspath-*"]
 
 [[block.prep]]
-onchange = True
+onchange = true
 cmd = "echo @mods"

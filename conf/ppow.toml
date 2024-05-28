@@ -3,6 +3,14 @@
 [variables]
 # A magic variable controlling the execution shell
 shell = "bash"
+# Variables are declared like so
+var1 = "mystring"
+var2 = """
+my
+string
+with
+newlines"""
+
 
 # Patterns are arrays.
 [[block]]
@@ -22,7 +30,7 @@ cmd = "devd ./rendered"
 # filtered.
 [[block]]
 include = ["git/**.*"]
-noignore = True
+noignore = true
 
 [[block.prep]]
 cmd = "echo foo"
@@ -41,7 +49,7 @@ cmd = "devd -ol ./rendered"
 [[block]]
 
 [[block.prep]]
-onchange = True
+onchange = true
 cmd = "go test"
 
 # daemon commands support sig* options
@@ -50,18 +58,9 @@ cmd = "go test"
 signal = "sigterm"
 cmd = "devd -ol ./rendered"
 
-[variables]
-# Variables are declared like so
-var1 = "mystring"
-var2 = """
-my
-string
-with
-newlines"""
-
-# And used ilke so
+# Variables used like so
 [[block]]
-pattern = "foo"
+include = ["foo"]
 
 [[block.prep]]
 cmd = "ls @var"

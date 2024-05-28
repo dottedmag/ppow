@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -260,6 +262,35 @@ func TestParse(t *testing.T) {
 
 			if diff := cmp.Diff(ret, tt.expected, parseCmpOptions...); diff != "" {
 				t.Errorf("%d %s", i, diff)
+			}
+		})
+	}
+}
+
+func findAllConfigs(root string) []string {
+	var configs []string
+	filepath.WalkDir(root, func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if filepath.Ext(name) == ".toml" {
+			configs = append(configs, name)
+		}
+		return nil
+	})
+	return configs
+}
+
+func TestParseExt(t *testing.T) {
+	for _, tt := range findAllConfigs("..") {
+		t.Run(tt, func(t *testing.T) {
+			contents, err := os.ReadFile(tt)
+			if err != nil {
+				t.Errorf("failed to read config: %v", err)
+				return
+			}
+			if _, err := Parse(tt, string(contents)); err != nil {
+				t.Errorf("failed to parse config %s: %v", tt, err)
 			}
 		})
 	}

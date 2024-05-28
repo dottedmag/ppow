@@ -1,34 +1,37 @@
 [[block]]
-
 [[block.prep]]
 cmd = """
 echo Should be in source dir
 pwd
 """
 
-[[block.prep]]
+[[block]]
 indir = ".."
+[[block.prep]]
 cmd = """
 echo Should be in top level
 pwd
 """
 
-[[block.prep]]
+[[block]]
 indir = "./test"
+[[block.prep]]
 cmd = """
 echo Should be in test
 pwd
 """
 
-[[block.prep]]
+[[block]]
 indir = ".."
+[[block.prep]]
 cmd = """
 echo Should be in top level
 pwd
 """
 
-[[block.prep]]
+[[block]]
 indir = "@confdir"
+[[block.prep]]
 cmd = """
 echo Should be in test
 pwd
