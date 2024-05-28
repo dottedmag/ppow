@@ -1,5 +1,5 @@
 ppow is a developer tool that triggers commands and manages daemons in response
-to filesystem changes.
+to filesystem changes. It is a fork of excellent but unmaintained [modd](https://github.com/cortesi/modd).
 
 If you use ppow, you should also look at
 [devd](https://github.com/cortesi/devd), a compact HTTP daemon for developers.
