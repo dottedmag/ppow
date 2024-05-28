@@ -2,7 +2,6 @@ package ppow
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
@@ -91,7 +90,7 @@ func addCommonExcludes(c *conf.Config) {
 
 // ReadConfig parses the configuration file in ConfPath
 func (mr *ModRunner) ReadConfig() error {
-	ret, err := ioutil.ReadFile(mr.ConfPath)
+	ret, err := os.ReadFile(mr.ConfPath)
 	if err != nil {
 		return fmt.Errorf("Error reading config file %s: %s", mr.ConfPath, err)
 	}

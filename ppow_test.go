@@ -1,7 +1,6 @@
 package ppow
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,7 +11,6 @@ import (
 	"github.com/cortesi/moddwatch"
 	"github.com/cortesi/termlog"
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/utils"
 )
 
 const timeout = 5 * time.Second
@@ -35,7 +33,7 @@ func touch(p string) {
 	if err := f.Close(); err != nil {
 		panic(err)
 	}
-	ioutil.ReadFile(p)
+	os.ReadFile(p)
 }
 
 func events(p string) []string {
@@ -52,7 +50,7 @@ func events(p string) []string {
 }
 
 func _testWatch(t *testing.T, modfunc func(), expected []string) {
-	defer utils.WithTempDir(t)()
+	defer withTempDir(t)()
 
 	err := os.MkdirAll("a/inner", 0777)
 	if err != nil {
@@ -239,4 +237,34 @@ func TestWatch(t *testing.T) {
 			)
 		},
 	)
+}
+
+// WithTempDir creates a temp directory, changes the current working directory
+// to it, and returns a function that can be called to clean up. Use it like
+// this:
+//
+//	defer WithTempDir(t)()
+func withTempDir(t *testing.T) func() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("TempDir: %v", err)
+	}
+	tmpdir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatalf("TempDir: %v", err)
+	}
+	err = os.Chdir(tmpdir)
+	if err != nil {
+		t.Fatalf("Chdir: %v", err)
+	}
+	return func() {
+		err := os.Chdir(cwd)
+		if err != nil {
+			t.Fatalf("Chdir: %v", err)
+		}
+		err = os.RemoveAll(tmpdir)
+		if err != nil {
+			t.Fatalf("Removing tmpdir: %s", err)
+		}
+	}
 }
