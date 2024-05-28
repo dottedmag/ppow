@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cortesi/termlog"
 	"github.com/dottedmag/ppow"
 	"github.com/dottedmag/ppow/notify"
+	"github.com/dottedmag/termlog"
 	"github.com/spf13/pflag"
 )
 
