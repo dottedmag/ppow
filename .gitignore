@@ -1,4 +1,2 @@
-tmp
 .DS_Store
-.idea
-.vscode
+/cmd/ppow/ppow
