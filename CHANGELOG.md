@@ -1,7 +1,11 @@
 # IN PROGRESS
 
 * Under a new management
-
+* modd renamed to ppow
+* Custom config replaced with TOML
+* Removed internal shell, does not play well with signals
+* Replace kingpin with pflag to get rid of some dependencies
+* Use forked termlog to get rid of more dependencies
 
 # v0.8 - 21 January 2019
 
