@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/cortesi/moddwatch"
-	"github.com/cortesi/termlog"
 	"github.com/dottedmag/ppow/conf"
 	"github.com/dottedmag/ppow/notify"
 	"github.com/dottedmag/ppow/shell"
+	"github.com/dottedmag/termlog"
 )
 
 // ProcError is a process error, possibly containing command output

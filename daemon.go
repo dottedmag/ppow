@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cortesi/termlog"
 	"github.com/dottedmag/ppow/conf"
 	"github.com/dottedmag/ppow/shell"
+	"github.com/dottedmag/termlog"
 )
 
 const (

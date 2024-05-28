@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cortesi/termlog"
+	"github.com/dottedmag/termlog"
 )
 
 type cmdTest struct {

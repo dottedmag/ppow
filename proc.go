@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cortesi/termlog"
+	"github.com/dottedmag/termlog"
 )
 
 // shortCommand shortens a command to a name we can use in a notification

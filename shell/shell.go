@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/cortesi/termlog"
+	"github.com/dottedmag/termlog"
 )
 
 var ValidShells = map[string]bool{
