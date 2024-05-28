@@ -1,0 +1,9 @@
+[[block]]
+include = ["**"]
+
+[[block.daemon]]
+cmd = "sleep 10"
+
+[[block.daemon]]
+signal = "sigkill"
+cmd = "sleep 20"

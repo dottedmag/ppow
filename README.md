@@ -6,14 +6,14 @@ If you use ppow, you should also look at
 Devd integrates with ppow, allowing you to trigger in-browser livereload with
 ppow.
 
-The repo contains a set of example *ppow.conf* files that you can look at for a
+The repo contains a set of example *ppow.toml* files that you can look at for a
 quick idea of what ppow can do:
 
 Example                                      | Description
 -------------------------------------------- | -------
-[frontend.conf](./examples/frontend.conf)    | A front-end project with React + Browserify + Babel. ppow and devd replace many functions of Gulp/Grunt.
-[go.conf](./examples/go.conf)                | Live unit tests for Go.
-[python.conf](./examples/python.conf)        | Python + Redis, with devd managing livereload.
+[frontend.ppow.toml](./examples/frontend.ppow.toml)    | A front-end project with React + Browserify + Babel. ppow and devd replace many functions of Gulp/Grunt.
+[go.ppow.toml](./examples/go.ppow.toml)                | Live unit tests for Go.
+[python.ppow.toml](./examples/python.ppow.toml)        | Python + Redis, with devd managing livereload.
 
 
 
@@ -30,12 +30,13 @@ Alternatively, with Go 1.17+ installed, you can install `ppow` directly using `g
 
 # Quick start
 
-Put this in a file called *ppow.conf*:
+Put this in a file called *ppow.toml*:
 
 ```
-**/*.go {
-    prep: go test @dirmods
-}
+[[block]]
+include = ["**/*.go"]
+[[block.prep]]
+cmd = "go test @dirmods"
 ```
 
 Now run ppow like so:
@@ -51,10 +52,10 @@ only on the enclosing module.
 
 # Details
 
-On startup, ppow looks for a file called *ppow.conf* in the current directory.
-This file has a simple but powerful syntax - one or more blocks of commands,
+On startup, ppow looks for a file called *ppow.toml* in the current directory.
+This file is TOML, consisting of one or more blocks of commands,
 each of which can be triggered on changes to files matching a set of file
-patterns. The *ppow.conf* file is meant to be portable, and can safely be
+patterns. The *ppow.toml* file is meant to be portable, and can safely be
 checked into source repositories. Functionality that users will want to
 customize (like desktop notifications) is controlled through command-line
 flags.
@@ -70,20 +71,25 @@ commands succeed, any daemons in the block are restarted, also in order of
 occurrence. If multiple blocks are triggered by the same set of changes, they
 too run in order, from top to bottom.
 
-Here's a modified version of the *ppow.conf* file I use when hacking on devd.
-It runs the test suite whenever a .go file changes, builds devd whenever a
-non-test file is changed, and keeps a test instance running throughout.
+Here's a an example *ppow.toml* file. It runs the test suite whenever a .go
+file changes, builds devd whenever a non-test file is changed, and keeps a
+test instance running throughout.
 
 ```
-**/*.go {
-    prep: go test @dirmods
-}
+[[block]]
+include = ["**/*.go"]
+[[block.prep]]
+cmd = "go test @dirmods"
 
 # Exclude all test files of the form *_test.go
-**/*.go !**/*_test.go {
-    prep: go install ./cmd/devd
-    daemon +sigterm: devd -m ./tmp
-}
+[[block]]
+include = ["**/.go"]
+exclude = ["**/*_test.go"]
+[[block.prep]]
+cmd = "go install ./cmd/devd"
+[[block.daemon]]
+signal = "sigterm"
+cmd = "devd -m ./tmp"
 ```
 
 The **@dirmods** variable expands to a properly escaped list of all directories
@@ -93,7 +99,7 @@ startup, and then subsequently run the tests only for the affected module
 whenever there's a change. There's a corresponding **@mods** variable that
 contains all changed files.
 
-Note the *+sigterm* flag to the daemon command. When devd receives a SIGHUP
+Note the `signal = "sigterm"` option. When devd receives a SIGHUP
 (the default signal sent by ppow), it triggers a browser livereload, rather
 than exiting. This is what you want when devd is being used to serve a web
 project you're hacking on, but when developing devd _itself_, we actually want
@@ -101,9 +107,9 @@ it to exit and restart to pick up changes. We therefore tell ppow to send a
 SIGTERM to the daemon instead, which causes devd to exit and be restarted by
 ppow.
 
-By default ppow interprets commands using a [built-in POSIX-like
-shell](https://github.com/mvdan/sh). Some external shells are also supported,
-and can be used by setting `@shell` variable in your "ppow.conf" file.
+By default ppow interprets commands using `sh`. Some other external shells
+are also supported, and can be used by setting `shell` variable in your
+"ppow.toml" file.
 
 
 # File watch patterns
@@ -122,30 +128,10 @@ absolute. One subtlety is that this means that a pattern like `./*.js` will
 never match, because inbound paths will not have a leading `./` component - just
 use `*.js` instead.
 
+## Exclusions
 
-## Quotes
-
-File patterns can be naked or quoted strings. Quotes can be either single or
-double quotes, and the corresponding quote mark can be escaped with a backslash
-within the string:
-
-```
-"**/foo\"bar"
-```
-
-## Negation
-
-Patterns can be negated with a leading **!**. For quoted patterns, the
-exclamation mark goes outside of the quotes. So, this matches all files
-recursively, bar those with a .html extension and those in the **docs**
-directory.
-
-```
-** !**/*.html !"docs/**"
-```
-
-Negations are applied after all positive patterns - that is, ppow collects all
-files matching the positive patterns, then removes files matching the negation
+Exclusions are applied after all includes - that is, ppow collects all
+files matching the include patterns, then removes files matching the exclude
 patterns.
 
 ## Default ignore list
@@ -156,21 +142,23 @@ flag to the ppow command. The default ignore patterns can be disabled using the
 special **+noignore** flag, like so:
 
 ```
-.git/config +noignore {
-    prep: echo "git config changed"
-}
+[[block]]
+include = [".git/config"]
+noignore = true
+[[block.prep]]
+cmd = "echo \"git config changed\""
 ```
 
 ## Empty match pattern
 
-If no match pattern is specified, prep commands run once only at startup, and
+If no include pattern is specified, prep commands run once only at startup, and
 daemons are restarted if they exit, but won't ever be explicitly signalled to
 restart by ppow.
 
 ```
-{
-    prep: echo hello
-}
+[[block]]
+[[block.prep]]
+cmd = "echo hello"
 ```
 
 ## Symlinks
@@ -179,9 +167,10 @@ ppow does not implicitly traverse symlinks. To monitor a symlink, split the path
 specification and the matching pattern, like this:
 
 ```
-mydir/symlinkdir foo.* {
-    prep: echo changed
-}
+[[block]]
+include = ["mydir/symlinkdir", "foo.*"]
+[[block.prep]]
+cmd = "echo changed"
 ```
 
 Behind the scenes, we resolve the symlinked directory as if it was specified
@@ -214,35 +203,12 @@ Class      | Meaning
 
 # Blocks
 
-Each file match pattern specification has an associated block, which is
-enclosed in curly brackets. Blocks contain commands and block-scoped options.
-
-Single-line commands don't need to be quoted:
+Each block contains optional match patterns, commands and block-scoped options.
 
 ```
-prep: echo "I'm now rebuilding" | tee /tmp/output
-```
-
-Newlines can be escaped with a backslash for multi-line commands:
-
-```
-prep: ls \
-        -l \
-        -a
-```
-
-You can also enclose commands in single or double quotes, letting easily
-specify compound, multi-statement commands. These can contain anything you'd
-normally put in a shell script, and the same quoting and escaping conventions apply.
-
-```
-prep: "
-    ls \
-        -l \
-        -a
-    echo \"hello again\"
-    echo \"hello yet again\"
-"
+[[block]]
+[[block.prep]]
+cmd = """echo "I'm now rebuilding" | tee /tmp/output"""
 ```
 
 Within commands, the `@` character is treated specially, since it is the marker
@@ -251,12 +217,20 @@ with a backslash, and backslashes preceding the `@` symbol can themselves be
 escaped recursively.
 
 ```
-@foo = bar
-{
-    prep: echo "@foo"   # bar
-    prep: echo "\@foo"  # @foo
-    prep: echo "\\@foo" # \bar
-}
+[variables]
+foo = "bar"
+
+[[block]]
+[[block.prep]]
+cmd = "echo @foo" # bar
+
+[[block]]
+[[block.prep]]
+cmd = "echo \@foo" # @foo
+
+[[block]]
+[[block.prep]]
+cmd = "echo \\@foo" # \bar
 ```
 
 ## Prep commands
@@ -280,20 +254,22 @@ Given a config file like this, ppow will run *eslint* on all .js files when
 started, and then after that only run *eslint* on files if they change:
 
 ```
-**/*.js {
-    prep: eslint @mods
-}
+[[block]]
+include = ["**/*.js"]
+[[block.prep]]
+cmd = "eslint @mods"
 ```
 
 By default, prep commands are executed on the initial run of ppow. The
-`+onchange` option can be used to skip the initial run, and only execute when
+`onchange` option can be used to skip the initial run, and only execute when
 there is a detected change.
 
 ```
-*.go {
-	# only trigger on file changes
-	prep +onchange: go test
-}
+[[block]]
+include = ["**/*.go"]
+[[block.prep]]
+onchange = true
+cmd = "go test"
 ```
 
 
@@ -309,7 +285,10 @@ The default signal used is SIGHUP, but the signal can be controlled using
 modifier flags, like so:
 
 ```
-daemon +sigterm: mydaemon --config ./foo.conf
+[[block]]
+[[block.daemon]]
+signal = "sigterm"
+cmd = "mydaemon --config ./foo.config"
 ```
 
 The following signals are supported: **sighup**, **sigterm**, **sigint**,
@@ -335,21 +314,23 @@ fact that the shell itself permits comments, you can completely control the log
 display name.
 
 ```
-{
-    # This will show as "prep: mycommand"
-    prep: "
-        mycommand \
-            --longoption 1 \
-            --longoption 2
-    "
-    # This will show as "prep: daemon 1"
-    prep: "
-        # daemon 1
-        mycommand \
-            --longoption 1 \
-            --longoption 2
-    "
-}
+[[block]]
+
+# This will show as "prep: mycommand"
+[[block.prep]]
+cmd = """
+mycommand \
+  --longoption 1 \
+  --longoption 2
+"""
+# This will show as "prep: daemon 1"
+[[block.prep]]
+cmd = """
+# daemon 1
+mycommand \
+  --longoption 1 \
+  --longoption 2
+"""
 ```
 
 ## Options
@@ -358,14 +339,13 @@ The only block option at the moment is **indir**, which controls the execution
 directory of a block. ppow will change to this directory before executing
 commands and daemons, and change back to the previous directory afterwards.
 
-The directory specification follows the same conventions as commands, and can
-be enclosed in quotes to span multiple lines.
+The directory specification follows the same conventions as commands.
 
 ```
-{
-    indir: ./my/directory
-    prep: ls
-}
+[[block]]
+indir = "./my/directory"
+[[block.prep]]
+cmd = "ls"
 ```
 
 
@@ -374,29 +354,33 @@ be enclosed in quotes to span multiple lines.
 Variables are declared as follows:
 
 ```
-@variable = value
+[variables]
+variable = "value"
 ```
 
-Variables can only be declared in the global scope (i.e. not inside blocks). All
-values are strings and follow the same semantics as commands - that is, they can
-have escaped line endings, or be quoted strings. Variables are read once at
-startup, and it is an error to re-declare a variable that already exists.
+All values are strings and follow the same semantics as commands - that is,
+they can have escaped line endings, or be quoted strings. Variables are read
+once at startup, and it is an error to re-declare a variable that already exists.
 
 You can use variables in commands like so:
 
 ```
-@dst = ./build/dst
-** {
-    prep: ls @dst
-}
+[variables]
+dst = "./build/dst"
+
+[[block]]
+include = ["**"]
+[[block.prep]]
+cmd = "ls @dst"
 ```
 
-There is a special "@shell" variable that determines which shell is used to
-execute commands. Valid values are `bash`, `sh` (the default) and
+There is a special "shell" variable that determines which shell is used to
+execute commands. Valid values are `sh` (the default), `bash` and
 `powershell`. This variable is set as follows:
 
 ```
-@shell = bash
+[variables]
+shell = "bash"
 ```
 
 # Desktop Notifications

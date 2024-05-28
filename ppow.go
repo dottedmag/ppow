@@ -5,7 +5,10 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cortesi/moddwatch"
@@ -76,6 +79,16 @@ func NewModRunner(confPath string, log termlog.TermLog, notifiers []notify.Notif
 	return mr, nil
 }
 
+func addCommonExcludes(c *conf.Config) {
+	for i, b := range c.Blocks {
+		if !b.NoCommonFilter {
+			b.Exclude = append(b.Exclude, CommonExcludes...)
+			c.Blocks[i] = b
+		}
+	}
+
+}
+
 // ReadConfig parses the configuration file in ConfPath
 func (mr *ModRunner) ReadConfig() error {
 	ret, err := ioutil.ReadFile(mr.ConfPath)
@@ -87,11 +100,11 @@ func (mr *ModRunner) ReadConfig() error {
 		return fmt.Errorf("Error reading config file %s: %s", mr.ConfPath, err)
 	}
 
-	if _, err := shell.GetShellName(newcnf.GetVariables()[shellVarName]); err != nil {
+	if _, err := shell.GetShellName(conf.Variables(newcnf)[shellVarName]); err != nil {
 		return err
 	}
 
-	newcnf.CommonExcludes(CommonExcludes)
+	addCommonExcludes(newcnf)
 	mr.Config = newcnf
 	return nil
 }
@@ -99,7 +112,7 @@ func (mr *ModRunner) ReadConfig() error {
 // PrepOnly runs all prep functions and exits
 func (mr *ModRunner) PrepOnly(initial bool) error {
 	for _, b := range mr.Config.Blocks {
-		err := RunPreps(b, mr.Config.GetVariables(), nil, mr.Log, mr.Notifiers, initial)
+		err := RunPreps(b, mr.Config, mr.ConfPath, nil, mr.Log, mr.Notifiers, initial)
 		if err != nil {
 			return err
 		}
@@ -114,7 +127,17 @@ func (mr *ModRunner) runBlock(b conf.Block, mod *moddwatch.Mod, dpen *DaemonPen)
 			mr.Log.Shout("Error getting current working directory: %s", err)
 			return
 		}
-		err = os.Chdir(b.InDir)
+		dir, err := globalEval(b.InDir, mr.ConfPath, mr.Config)
+		if err != nil {
+			mr.Log.Shout("Unable to evaluate indir directory: %s", err)
+			return
+		}
+		dir, err = filepath.Abs(dir)
+		if err != nil {
+			mr.Log.Shout("Unable to absolutize indir directory: %s", err)
+			return
+		}
+		err = os.Chdir(dir)
 		if err != nil {
 			mr.Log.Shout(
 				"Error changing to indir directory \"%s\": %s",
@@ -132,7 +155,8 @@ func (mr *ModRunner) runBlock(b conf.Block, mod *moddwatch.Mod, dpen *DaemonPen)
 	}
 	err := RunPreps(
 		b,
-		mr.Config.GetVariables(),
+		mr.Config,
+		mr.ConfPath,
 		mod, mr.Log,
 		mr.Notifiers,
 		mod == nil,
@@ -147,11 +171,17 @@ func (mr *ModRunner) runBlock(b conf.Block, mod *moddwatch.Mod, dpen *DaemonPen)
 }
 
 func (mr *ModRunner) trigger(root string, mod *moddwatch.Mod, dworld *DaemonWorld) {
+blocks:
 	for i, b := range mr.Config.Blocks {
 		lmod := mod
 		if lmod != nil {
 			var err error
-			lmod, err = mod.Filter(root, b.Include, b.Exclude)
+			includes, excludes, err := evalIncludesExcludes(&b, mr.ConfPath, mr.Config)
+			if err != nil {
+				mr.Log.Shout("%s", err)
+				continue blocks
+			}
+			lmod, err = mod.Filter(root, includes, excludes)
 			if err != nil {
 				mr.Log.Shout("Error filtering events: %s", err)
 				continue
@@ -164,9 +194,144 @@ func (mr *ModRunner) trigger(root string, mod *moddwatch.Mod, dworld *DaemonWorl
 	}
 }
 
+func globalEval(s string, confPath string, cnf *conf.Config) (string, error) {
+	return varEval(s, conf.Variables(cnf), map[string]string{
+		"shell":    "sh",
+		"confpath": filepath.Dir(confPath),
+	})
+}
+
+func globalEvalList(ss []string, confPath string, cnf *conf.Config) ([]string, error) {
+	var out []string
+	for _, val := range ss {
+		evaled, err := globalEval(val, confPath, cnf)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, evaled)
+	}
+	return out, nil
+}
+
+func evalIncludesExcludes(b *conf.Block, confPath string, cnf *conf.Config) (retIncludes, retExcludes []string, _ error) {
+	includes, err := globalEvalList(b.Include, confPath, cnf)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to evaluate includes: %w", err)
+	}
+	excludes, err := globalEvalList(b.Exclude, confPath, cnf)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to evaluate excludes: %w", err)
+	}
+	return includes, excludes, nil
+}
+
+func getDirs(paths []string) []string {
+	m := map[string]bool{}
+	for _, p := range paths {
+		p := path.Dir(p)
+		m[p] = true
+	}
+	keys := []string{}
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// quotePath quotes a path for use on the command-line. The path must be in
+// slash-delimited format, and the quoted path will use the native OS separator.
+// FIXME: This is actually dependent on the shell used.
+func quotePath(path string) string {
+	path = strings.Replace(path, "\"", "\\\"", -1)
+	return "\"" + path + "\""
+}
+
+// The paths we receive from Go's path manipulation functions are "cleaned",
+// which removes redundancy, but also removes the leading "./" needed by many
+// command-line tools. This function turns cleaned paths into "really relative"
+// paths.
+func realRel(p string) string {
+	// They should already be clean, but let's make sure.
+	p = path.Clean(p)
+	if path.IsAbs(p) {
+		return p
+	} else if p == "." {
+		return "./"
+	}
+	return "./" + p
+}
+
+// mkArgs prepares a list of paths for the command line
+func mkArgs(paths []string) string {
+	escaped := make([]string, len(paths))
+	for i, s := range paths {
+		escaped[i] = quotePath(realRel(s))
+	}
+	return strings.Join(escaped, " ")
+}
+
+func blockEval(s string, confPath string, cnf *conf.Config, modified []string) (string, error) {
+	return varEval(s, conf.Variables(cnf), map[string]string{
+		"shell":    "sh",
+		"confpath": filepath.Dir(confPath),
+		"mods":     mkArgs(modified),
+		"dirmods":  mkArgs(getDirs(modified)),
+	})
+}
+
+var varNameRx = regexp.MustCompile(`(\\*)@(\w+)`)
+
+func varEval(s string, vars map[string]string, terminalVars map[string]string) (string, error) {
+	var doVarEval func(string, map[string]bool) (string, error)
+
+	doVarEval = func(s string, seenVars map[string]bool) (string, error) {
+		mm := varNameRx.FindAllStringSubmatchIndex(s, -1)
+		if len(mm) == 0 {
+			return s, nil
+		}
+
+		out := s[:mm[0][0]]
+		for i := 0; i < len(mm); i++ {
+			if i > 0 {
+				out += s[mm[i-1][1]:mm[i][0]]
+			}
+			nSlashes := mm[i][3] - mm[i][2]
+			varName := s[mm[i][4]:mm[i][5]]
+
+			out += strings.Repeat(`\`, nSlashes/2)
+			if nSlashes%2 == 0 {
+				// @ not escaped, do eval
+				if seenVars[varName] {
+					return "", fmt.Errorf("infinite recursion of variable @%s", varName)
+				}
+				if _, ok := vars[varName]; ok {
+					seenVars[varName] = true
+					expanded, err := doVarEval(vars[varName], seenVars)
+					if err != nil {
+						return "", err
+					}
+					delete(seenVars, varName)
+					out += expanded
+				} else if _, ok := terminalVars[varName]; ok {
+					out += terminalVars[varName]
+				} else {
+					return "", fmt.Errorf("variable @%s is not defined", varName)
+				}
+			} else {
+				// @ escaped
+				out += "@" + varName
+			}
+		}
+		out += s[mm[len(mm)-1][1]:]
+		return out, nil
+	}
+
+	return doVarEval(s, map[string]bool{})
+}
+
 // Gives control of chan to caller
 func (mr *ModRunner) runOnChan(modchan chan *moddwatch.Mod, readyCallback func()) error {
-	dworld, err := NewDaemonWorld(mr.Config, mr.Log)
+	dworld, err := NewDaemonWorld(mr.Config, mr.ConfPath, mr.Log)
 	if err != nil {
 		return err
 	}
@@ -180,7 +345,7 @@ func (mr *ModRunner) runOnChan(modchan chan *moddwatch.Mod, readyCallback func()
 		os.Exit(0)
 	}()
 
-	ipatts := mr.Config.IncludePatterns()
+	ipatts := conf.IncludePatterns(mr.Config)
 	if mr.ConfReload {
 		ipatts = append(ipatts, filepath.Dir(mr.ConfPath))
 	}

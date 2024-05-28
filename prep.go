@@ -1,6 +1,7 @@
 package ppow
 
 import (
+	"path/filepath"
 	"time"
 
 	"github.com/cortesi/moddwatch"
@@ -8,7 +9,6 @@ import (
 	"github.com/dottedmag/ppow/conf"
 	"github.com/dottedmag/ppow/notify"
 	"github.com/dottedmag/ppow/shell"
-	"github.com/dottedmag/ppow/varcmd"
 )
 
 // ProcError is a process error, possibly containing command output
@@ -43,13 +43,14 @@ func RunProc(cmd string, shellMethod string, dir string, log termlog.Stream) err
 // RunPreps runs all commands in sequence. Stops if any command returns an error.
 func RunPreps(
 	b conf.Block,
-	vars map[string]string,
+	cnf *conf.Config,
+	confPath string,
 	mod *moddwatch.Mod,
 	log termlog.TermLog,
 	notifiers []notify.Notifier,
 	initial bool,
 ) error {
-	sh, err := shell.GetShellName(vars[shellVarName])
+	sh, err := globalEval("@shell", confPath, cnf)
 	if err != nil {
 		return err
 	}
@@ -59,9 +60,19 @@ func RunPreps(
 		modified = mod.All()
 	}
 
-	vcmd := varcmd.VarCmd{Block: &b, Modified: modified, Vars: vars}
+	if modified == nil {
+		includes, excludes, err := evalIncludesExcludes(&b, confPath, cnf)
+		if err != nil {
+			return err
+		}
+		modified, err = moddwatch.List(".", includes, excludes)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, p := range b.Preps {
-		cmd, err := vcmd.Render(p.Command)
+		cmd, err := blockEval(p.Command, confPath, cnf, modified)
 		if initial && p.Onchange {
 			log.Say(niceHeader("skipping prep: ", cmd))
 			continue
@@ -69,7 +80,15 @@ func RunPreps(
 		if err != nil {
 			return err
 		}
-		err = RunProc(cmd, sh, b.InDir, log.Stream(niceHeader("prep: ", cmd)))
+		dir, err := globalEval(b.InDir, confPath, cnf)
+		if err != nil {
+			return err
+		}
+		dir, err = filepath.Abs(dir)
+		if err != nil {
+			return err
+		}
+		err = RunProc(cmd, sh, dir, log.Stream(niceHeader("prep: ", cmd)))
 		if err != nil {
 			if pe, ok := err.(ProcError); ok {
 				for _, n := range notifiers {

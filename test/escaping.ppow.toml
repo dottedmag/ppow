@@ -1,0 +1,11 @@
+[[block]]
+include = ["**"]
+
+[[block.prep]]
+cmd = "ls @mods"
+
+[[block.prep]]
+cmd = "echo @mods"
+
+[[block.prep]]
+cmd = "ls @mods @mods"

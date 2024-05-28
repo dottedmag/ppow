@@ -1,0 +1,15 @@
+[[block]]
+include = ["**/*.go"]
+
+[[block.prep]]
+cmd = "go test ./..."
+
+[[block.prep]]
+cmd = "go install ./cmd/ppow"
+
+[[block.daemon]]
+cmd = """
+#ppow
+cd test
+ppow -f mixed.ppow.toml
+"""

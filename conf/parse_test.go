@@ -2,6 +2,7 @@ package conf
 
 import (
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 
@@ -28,7 +29,7 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		"{}",
+		"[[block]]",
 		&Config{
 			Blocks: []Block{
 				{},
@@ -37,7 +38,9 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		"foo {}",
+		`[[block]]
+include=["foo"]
+`,
 		&Config{
 			Blocks: []Block{
 				{
@@ -48,7 +51,8 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		"foo bar {}",
+		`[[block]]
+include=["foo", "bar"]`,
 		&Config{
 			Blocks: []Block{
 				{
@@ -59,7 +63,8 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		"!foo {}",
+		`[[block]]
+exclude=["foo"]`,
 		&Config{
 			Blocks: []Block{
 				{
@@ -70,18 +75,8 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		`!"foo" {}`,
-		&Config{
-			Blocks: []Block{
-				{
-					Exclude: []string{"foo"},
-				},
-			},
-		},
-	},
-	{
-		"",
-		`!"foo" !'bar' !voing {}`,
+		`[[block]]
+exclude=["foo", "bar", "voing"]`,
 		&Config{
 			Blocks: []Block{
 				{Exclude: []string{"foo", "bar", "voing"}},
@@ -90,7 +85,9 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		`foo +noignore {}`,
+		`[[block]]
+include=["foo"]
+noignore = true`,
 		&Config{
 			Blocks: []Block{
 				{
@@ -102,200 +99,148 @@ var parseTests = []struct {
 	},
 	{
 		"",
-		"'foo bar' voing {}",
-		&Config{
-			Blocks: []Block{
-				{
-					Include: []string{"foo bar", "voing"},
-				},
-			},
-		},
-	},
-	{
-		"",
-		"foo {\ndaemon: command\n}",
+		`[[block]]
+include=["foo"]
+[[block.daemon]]
+cmd = "command"`,
 		&Config{
 			Blocks: []Block{
 				{
 					Include: []string{"foo"},
-					Daemons: []Daemon{{"command", syscall.SIGHUP}},
+					Daemons: []Daemon{{"command", Signal{}}},
 				},
 			},
 		},
 	},
 	{
 		"",
-		"{\ndaemon +sighup: c\n}",
+		`[[block]]
+[[block.daemon]]
+cmd = "c"
+signal = "sighup"`,
 		&Config{
 			Blocks: []Block{
-				{Daemons: []Daemon{{"c", syscall.SIGHUP}}},
+				{Daemons: []Daemon{{"c", Signal{syscall.SIGHUP}}}},
 			},
 		},
 	},
 	{
 		"",
-		"{\ndaemon +sigterm: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGTERM}}}}},
+		`[[block]]
+[[block.daemon]]
+cmd = "c"
+signal = "sigterm"`,
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", Signal{syscall.SIGTERM}}}}}},
 	},
 	{
 		"",
-		"{\ndaemon +sigint: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGINT}}}}},
+		`[[block]]
+[[block.daemon]]
+cmd = "c"
+signal = "sigint"`,
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", Signal{syscall.SIGINT}}}}}},
 	},
 	{
 		"",
-		"{\ndaemon +sigkill: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGKILL}}}}},
+		`[[block]]
+[[block.daemon]]
+cmd = "c"
+signal = "sigkill"`,
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", Signal{syscall.SIGKILL}}}}}},
 	},
 	{
 		"",
-		"{\ndaemon +sigquit: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGQUIT}}}}},
+		`[[block]]
+[[block.daemon]]
+cmd = "c"
+signal = "sigquit"`,
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", Signal{syscall.SIGQUIT}}}}}},
 	},
 	{
 		"",
-		"foo {\nprep: command\n}",
-		&Config{
-			Blocks: []Block{
-				{
-					Include: []string{"foo"},
-					Preps:   []Prep{Prep{Command: "command"}},
-				},
-			},
-		},
-	},
-	{
-		"",
-		"foo {\nprep +onchange: command\n}",
-		&Config{
-			Blocks: []Block{
-				{
-					Include: []string{"foo"},
-					Preps:   []Prep{Prep{Command: "command", Onchange: true}},
-				},
-			},
-		},
-	},
-	{
-		"",
-		"foo {\nprep: 'command\n-one\n-two'}",
+		`[[block]]
+include=["foo"]
+[[block.prep]]
+cmd = "command"`,
 		&Config{
 			Blocks: []Block{
 				{
 					Include: []string{"foo"},
-					Preps:   []Prep{Prep{Command: "command\n-one\n-two"}},
+					Preps:   []Prep{{Command: "command"}},
 				},
 			},
 		},
 	},
 	{
 		"",
-		"foo #comment\nbar\n#comment\n{\n#comment\nprep: command\n}",
+		`[[block]]
+include = ["foo"]
+[[block.prep]]
+onchange = true
+cmd = "command"`,
 		&Config{
 			Blocks: []Block{
 				{
-					Include: []string{"foo", "bar"},
-					Preps:   []Prep{Prep{Command: "command"}},
+					Include: []string{"foo"},
+					Preps:   []Prep{{Command: "command", Onchange: true}},
 				},
 			},
 		},
 	},
 	{
 		"",
-		"foo #comment\n#comment\nbar { #comment \nprep: command\n}",
+		`[[block]]
+include = ["foo"]
+[[block.prep]]
+cmd = "command\n-one\n-two"`,
 		&Config{
 			Blocks: []Block{
 				{
-					Include: []string{"foo", "bar"},
-					Preps:   []Prep{{"command", false}},
+					Include: []string{"foo"},
+					Preps:   []Prep{{Command: "command\n-one\n-two"}},
 				},
 			},
 		},
 	},
 	{
 		"",
-		"@var=bar\nfoo {}",
+		`[variables]
+var="bar"
+[[block]]
+include = ["foo"]`,
 		&Config{
 			Blocks: []Block{
 				{
 					Include: []string{"foo"},
 				},
 			},
-			variables: map[string]string{
-				"@var": "bar",
+			Variables: map[string]string{
+				"var": "bar",
 			},
 		},
 	},
 	{
 		"",
-		"@var='bar\nvoing'\nfoo {}",
+		`[[block]]
+indir = "foo"`,
 		&Config{
 			Blocks: []Block{
-				{
-					Include: []string{"foo"},
-				},
-			},
-			variables: map[string]string{
-				"@var": "bar\nvoing",
+				{InDir: "foo"},
 			},
 		},
 	},
 	{
+		"./path/to/ppow.toml",
 		"",
-		"foo {}\n@var=bar\n",
-		&Config{
-			Blocks: []Block{
-				{
-					Include: []string{"foo"},
-				},
-			},
-			variables: map[string]string{
-				"@var": "bar",
-			},
-		},
+		&Config{},
 	},
 	{
-		"",
-		"@oink=foo\nfoo {}\n@var=bar\n",
+		"./path/to/ppow.toml",
+		`[[block]]
+indir = "@confdir/foo"`,
 		&Config{
 			Blocks: []Block{
-				{
-					Include: []string{"foo"},
-				},
-			},
-			variables: map[string]string{
-				"@var":  "bar",
-				"@oink": "foo",
-			},
-		},
-	},
-	{
-		"",
-		"{ indir: foo\n }",
-		&Config{
-			Blocks: []Block{
-				{InDir: mustAbs("foo")},
-			},
-		},
-	},
-	{
-		"./path/to/ppow.conf",
-		"",
-		&Config{
-			variables: map[string]string{
-				"@confdir": "path/to",
-			},
-		},
-	},
-	{
-		"./path/to/ppow.conf",
-		"{ indir: @confdir/foo\n }",
-		&Config{
-			Blocks: []Block{
-				{InDir: mustAbs("path/to/foo")},
-			},
-			variables: map[string]string{
-				"@confdir": "path/to",
+				{InDir: "@confdir/foo"},
 			},
 		},
 	},
@@ -307,14 +252,16 @@ var parseCmpOptions = []cmp.Option{
 
 func TestParse(t *testing.T) {
 	for i, tt := range parseTests {
-		ret, err := Parse(tt.path, tt.input)
-		if err != nil {
-			t.Fatalf("%q - %s", tt.input, err)
-		}
+		t.Run(tt.input, func(t *testing.T) {
+			ret, err := Parse(tt.path, tt.input)
+			if err != nil {
+				t.Errorf("%q - %s", tt.input, err)
+			}
 
-		if diff := cmp.Diff(ret, tt.expected, parseCmpOptions...); diff != "" {
-			t.Errorf("%d %s", i, diff)
-		}
+			if diff := cmp.Diff(ret, tt.expected, parseCmpOptions...); diff != "" {
+				t.Errorf("%d %s", i, diff)
+			}
+		})
 	}
 }
 
@@ -322,28 +269,18 @@ var parseErrorTests = []struct {
 	input string
 	err   string
 }{
-	{"{", "test:1: unterminated block"},
-	{"a", "test:1: expected block open parentheses, got \"\""},
-	{`foo { "bar": "bar" }`, "test:1: invalid input"},
-	{"foo { daemon: \n }", "test:1: empty command specification"},
-	{"foo { daemon: \" }", "test:1: unterminated quoted string"},
-	{"foo { daemon *: foo }", "test:1: invalid syntax"},
-	{"foo { daemon +invalid: foo }", "test:1: unknown option: +invalid"},
-	{"foo { prep +invalid: foo }", "test:1: unknown option: +invalid"},
-	{"@foo bar {}", "test:1: Expected ="},
-	{"@foo =", "test:1: unterminated variable assignment"},
-	{"@foo=bar\n@foo=bar {}", "test:2: variable @foo shadows previous declaration"},
-	{"{indir +foo: bar\n}", "test:1: indir takes no options"},
-	{"{indir: bar\nindir: voing\n}", "test:2: indir can only be used once per block"},
+	{`[[block]]
+[[block.daemon]]
+signal = "foobar"`, "unknown signal"},
 }
 
 func TestErrorsParse(t *testing.T) {
 	for i, tt := range parseErrorTests {
 		v, err := Parse("test", tt.input)
 		if err == nil {
-			t.Fatalf("%d: Expected error, got %#v", i, v)
+			t.Errorf("%d: Expected error, got %#v", i, v)
 		}
-		if err.Error() != tt.err {
+		if err != nil && !strings.Contains(err.Error(), tt.err) {
 			t.Errorf("Expected\n%q\ngot\n%q", tt.err, err.Error())
 		}
 	}

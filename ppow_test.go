@@ -71,27 +71,42 @@ func _testWatch(t *testing.T, modfunc func(), expected []string) {
 	time.Sleep(200 * time.Millisecond)
 
 	confTxt := `
-		@shell = bash
+[variables]
+shell = "bash"
 
-        ** {
-            prep +onchange: echo ":skipit:" @mods
-            prep: echo ":all:" @mods
-        }
-        a/* {
-            prep: echo ":a:" @mods
-        }
-        b/* {
-            prep: echo ":b:" @mods
-        }
-        a/**/*.xxx {
-            prep: echo ":c:" @mods
-        }
-        a/direct {
-            prep: echo ":d:" @mods
-        }
-        direct {
-            prep: echo ":e:" @mods
-        }
+[[block]]
+include = ["**"]
+[[block.prep]]
+onchange = true
+cmd = "echo \":skipit:\" @mods"
+
+[[block.prep]]
+cmd = "echo \":all:\" @mods"
+
+[[block]]
+include = ["a/*"]
+[[block.prep]]
+cmd = "echo \":a:\" @mods"
+
+[[block]]
+include = ["b/*"]
+[[block.prep]]
+cmd = "echo \":b:\" @mods"
+
+[[block]]
+include = ["a/**/*.xxx"]
+[[block.prep]]
+cmd = "echo \":c:\" @mods"
+
+[[block]]
+include = ["a/direct"]
+[[block.prep]]
+cmd = "echo \":d:\" @mods"
+
+[[block]]
+include = ["direct"]
+[[block.prep]]
+cmd = "echo \":e:\" @mods"
     `
 	cnf, err := conf.Parse("test", confTxt)
 	if err != nil {

@@ -1,0 +1,28 @@
+# An example from a Python project. The project also contains a front-end,
+# managed similar to the example in frontend.ppow.toml
+
+# Run redis on startup, and restart it whenever its config file changes
+[[block]]
+include = ["cnf/redis.conf"]
+
+[[block.daemon]]
+cmd = "redis-server ./cnf/redis.conf"
+
+# Run the test suite if a source or test file changes
+[[block]]
+include = ["src/**/*.py", "tests/**"]
+
+[[block.prep]]
+cmd = "nosetests ./tests"
+
+# Start the server, and restart it whenever a source file changes
+# Devd is used in reverse proxy mode to manage livereload
+[[block]]
+include = ["src/**/*.py", "./server"]
+
+# Server runs on port localhost:8080
+[[block.daemon]]
+cmd = "./server"
+
+[[block.daemon]]
+cmd = "devd -olm http://localhost:8080"

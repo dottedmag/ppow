@@ -1,0 +1,85 @@
+# A ppow.toml for front-end development using React, Browserify, Babel, and
+# ESLint. Livereload and HTTP serving is managed by devd.
+
+[variables]
+bin = "./node_modules/.bin"
+dst = "./build"
+
+# Rebuild the vendor package when package.json changes. The ./scripts/vendor
+# tool is a tiny helper that lists the packages from package.json dependencies.
+
+[[block]]
+include = ["package.json"]
+
+[[block.prep]]
+cmd = """
+cp
+  --foo
+  --bar
+  src dst
+"""
+
+[[block.daemon]]
+cmd = """
+devd
+  --foobar
+  --voing
+  foo
+"""
+
+
+# Whenever a Javascript source file changes, we run eslint, compile with babel,
+# and then create a package with browserify. Note that babel renders to a cache
+# directory - combined with the @mods variable, this means that we only compile
+# what's changed at every point.
+[[block]]
+include = ["src/**/*.js"]
+
+[[block.prep]]
+cmd = "@bin/eslint @mods"
+
+[[block.prep]]
+cmd = "@bin/babel -s inline -d .cache @mods"
+
+# Browserify renders from the babel destination cache, not the original
+# source.
+[[block.prep]]
+cmd = """
+@bin/browserify --debug
+ `./scripts/vendor '-x '`
+ .cache/src/js/app.react.js \
+ -o @dst/static/app.js
+"""
+
+[[block]]
+include = ["src/css/app*"]
+
+[[block.prep]]
+cmd = "@bin/lessc ./src/css/app.less @dst/static/app.css"
+
+[[block]]
+include = ["src/css/vendor*"]
+
+[[block.prep]]
+cmd = "@bin/lessc ./src/css/vendor.less @dst/static/vendor.css"
+
+[[block]]
+include = ["src/examples"]
+
+[[block.prep]]
+cmd = "cp -r ./src/examples @dst"
+
+[[block]]
+include = ["src/index.html"]
+
+[[block.prep]]
+cmd = "cp ./src/index.html @dst"
+
+# Whenever anything in the build directory changes, devd gets a signal that
+# triggers livereload.
+
+[[block]]
+include = ["build/**"]
+
+[[block.daemon]]
+cmd = "devd -om @dst"

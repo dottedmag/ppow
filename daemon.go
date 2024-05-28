@@ -3,13 +3,14 @@ package ppow
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cortesi/termlog"
 	"github.com/dottedmag/ppow/conf"
 	"github.com/dottedmag/ppow/shell"
-	"github.com/dottedmag/ppow/varcmd"
 )
 
 const (
@@ -84,11 +85,15 @@ func (d *daemon) Restart() {
 		d.ex = ex
 		go d.Run()
 	} else {
-		d.log.Notice(">> sending signal %s", d.conf.RestartSignal)
-		err := d.ex.Signal(d.conf.RestartSignal)
+		signal := d.conf.RestartSignal.Signal
+		if signal == nil {
+			signal = syscall.SIGHUP
+		}
+		d.log.Notice(">> sending signal %s", signal)
+		err := d.ex.Signal(signal)
 		if err != nil {
 			d.log.Warn(
-				"failed to send %s signal to %s: %v", d.conf.RestartSignal, d.conf.Command, err,
+				"failed to send %s signal to %s: %v", signal, d.conf.Command, err,
 			)
 		}
 	}
@@ -110,25 +115,31 @@ type DaemonPen struct {
 }
 
 // NewDaemonPen creates a new DaemonPen
-func NewDaemonPen(block conf.Block, vars map[string]string, log termlog.TermLog) (*DaemonPen, error) {
+func NewDaemonPen(block conf.Block, confPath string, cnf *conf.Config, log termlog.TermLog) (*DaemonPen, error) {
 	d := make([]*daemon, len(block.Daemons))
 	for i, dmn := range block.Daemons {
-		vcmd := varcmd.VarCmd{Block: nil, Modified: nil, Vars: vars}
-		finalcmd, err := vcmd.Render(dmn.Command)
+		finalcmd, err := globalEval(dmn.Command, confPath, cnf)
 		if err != nil {
 			return nil, err
 		}
 		dmn.Command = finalcmd
 		var indir string
 		if block.InDir != "" {
-			indir = block.InDir
+			indir, err = globalEval(block.InDir, confPath, cnf)
+			if err != nil {
+				return nil, err
+			}
+			indir, err = filepath.Abs(indir)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			indir, err = os.Getwd()
 			if err != nil {
 				return nil, err
 			}
 		}
-		sh, err := shell.GetShellName(vars[shellVarName])
+		sh, err := globalEval("@shell", confPath, cnf)
 		if err != nil {
 			return nil, err
 		}
@@ -171,10 +182,10 @@ type DaemonWorld struct {
 }
 
 // NewDaemonWorld creates a DaemonWorld
-func NewDaemonWorld(cnf *conf.Config, log termlog.TermLog) (*DaemonWorld, error) {
+func NewDaemonWorld(cnf *conf.Config, confPath string, log termlog.TermLog) (*DaemonWorld, error) {
 	daemonPens := make([]*DaemonPen, len(cnf.Blocks))
 	for i, b := range cnf.Blocks {
-		d, err := NewDaemonPen(b, cnf.GetVariables(), log)
+		d, err := NewDaemonPen(b, confPath, cnf, log)
 		if err != nil {
 			return nil, err
 		}

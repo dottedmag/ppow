@@ -9,6 +9,9 @@
 #
 #       echo foo >> /tmp/abspath-foo
 #
-/tmp/abspath/abspath-* {
-	prep +onchange: echo @mods
-}
+[[block]]
+include = ["/tmp/abspath/abspath-*"]
+
+[[block.prep]]
+onchange = True
+cmd = "echo @mods"

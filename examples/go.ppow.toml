@@ -1,0 +1,9 @@
+# A basic ppow.toml file for Go development.
+
+# Run go test on ALL modules on startup, and subsequently only on modules
+# containing changes.
+[[block]]
+include = "**/*.go"
+
+[[block.prep]]
+cmd = "go test @dirmods"

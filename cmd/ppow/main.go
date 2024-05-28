@@ -10,7 +10,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const modfile = "./ppow.conf"
+const modfile = "./ppow.toml"
 
 var file = kingpin.Flag(
 	"file",

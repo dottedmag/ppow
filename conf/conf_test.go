@@ -13,7 +13,7 @@ func TestWatchPaths(t *testing.T) {
 		},
 	}
 	expected := []string{"a/bar", "a/foo", "b/foo"}
-	got := c.IncludePatterns()
+	got := IncludePatterns(&c)
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("Expected %#v, got %#v", expected, got)
 	}

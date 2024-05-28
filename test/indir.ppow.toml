@@ -1,0 +1,35 @@
+[[block]]
+
+[[block.prep]]
+cmd = """
+echo Should be in source dir
+pwd
+"""
+
+[[block.prep]]
+indir = ".."
+cmd = """
+echo Should be in top level
+pwd
+"""
+
+[[block.prep]]
+indir = "./test"
+cmd = """
+echo Should be in test
+pwd
+"""
+
+[[block.prep]]
+indir = ".."
+cmd = """
+echo Should be in top level
+pwd
+"""
+
+[[block.prep]]
+indir = "@confdir"
+cmd = """
+echo Should be in test
+pwd
+"""

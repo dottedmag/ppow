@@ -1,0 +1,67 @@
+# An example ppow.toml file
+
+[variables]
+# A magic variable controlling the execution shell
+shell = "bash"
+
+# Patterns are arrays.
+[[block]]
+include = ["src/**.png", "src/**.jpg"]
+exclude = ["**/foo.jpg"]
+
+# A basic once-only command
+[[block.prep]]
+cmd = "./render foo bar"
+
+# A daemon command
+[[block.daemon]]
+cmd = "devd ./rendered"
+
+# "noignore" option specifies that commonly excluded files
+# (editor temporary files, VCS directorys, etc.) should not be
+# filtered.
+[[block]]
+include = ["git/**.*"]
+noignore = True
+
+[[block.prep]]
+cmd = "echo foo"
+
+# The empty pattern is never matched, so daemons never get restarted, and
+# commands are run once only at startup
+[[block]]
+
+[[block.prep]]
+cmd = "echo \"starting up\""
+
+[[block.daemon]]
+cmd = "devd -ol ./rendered"
+
+# prep commands support onchange for skipping commands on initial run.
+[[block]]
+
+[[block.prep]]
+onchange = True
+cmd = "go test"
+
+# daemon commands support sig* options
+[[block]]
+[[block.daemon]]
+signal = "sigterm"
+cmd = "devd -ol ./rendered"
+
+[variables]
+# Variables are declared like so
+var1 = "mystring"
+var2 = """
+my
+string
+with
+newlines"""
+
+# And used ilke so
+[[block]]
+pattern = "foo"
+
+[[block.prep]]
+cmd = "ls @var"

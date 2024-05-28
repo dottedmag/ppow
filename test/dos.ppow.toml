@@ -1,0 +1,12 @@
+[[block]]
+include = ["**"]
+
+[[block.prep]]
+cmd = "echo prep"
+
+[[block.daemon]]
+cmd = "sleep 10"
+
+[[block.daemon]]
+signal = "sigkill"
+cmd = "sleep 20"
