@@ -155,10 +155,6 @@ func (e *Executor) Signal(sig os.Signal) error {
 	return e.sendSignal(sig)
 }
 
-func (e *Executor) Stop() error {
-	return e.Signal(os.Kill)
-}
-
 func logOutput(wg *sync.WaitGroup, fp io.ReadCloser, out func(string, ...interface{})) {
 	defer wg.Done()
 	r := bufio.NewReader(fp)

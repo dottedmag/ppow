@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/cortesi/moddwatch"
@@ -58,6 +59,7 @@ type ModRunner struct {
 	ConfPath   string
 	ConfReload bool
 	Notifiers  []notify.Notifier
+	signalled  bool
 }
 
 // NewModRunner constructs a new ModRunner
@@ -163,6 +165,14 @@ func (mr *ModRunner) trigger(root string, mod *moddwatch.Mod, dworld *DaemonWorl
 	}
 }
 
+//
+// - prep
+// - daemon
+//
+// Signals are passed, processes are not restarted.
+// SIGTERM is special: if invoked twice then second time it's a KILL.
+//
+
 // Gives control of chan to caller
 func (mr *ModRunner) runOnChan(modchan chan *moddwatch.Mod, readyCallback func()) error {
 	dworld, err := NewDaemonWorld(mr.Config, mr.Log)
@@ -172,10 +182,27 @@ func (mr *ModRunner) runOnChan(modchan chan *moddwatch.Mod, readyCallback func()
 	defer dworld.Shutdown(os.Kill)
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, syscall.SIGABRT, syscall.SIGBUS, syscall.SIGCONT,
+		syscall.SIGFPE, syscall.SIGHUP, syscall.SIGILL,
+		syscall.SIGINT, syscall.SIGIO, syscall.SIGIOT, syscall.SIGPIPE,
+		syscall.SIGQUIT, syscall.SIGSEGV, syscall.SIGSYS,
+		syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGTSTP,
+		syscall.SIGTTIN, syscall.SIGTTOU, syscall.SIGUSR1, syscall.SIGUSR2,
+		syscall.SIGVTALRM, syscall.SIGWINCH, syscall.SIGXCPU, syscall.SIGXFSZ)
 	defer signal.Reset(os.Interrupt, os.Kill)
 	go func() {
-		dworld.Shutdown(<-c)
+		sig := <-c
+		if sig == syscall.SIGTERM && mr.signalled {
+			mr.Log.Notice("Received SIGTERM after another signal, force-killing remaining processes")
+			sig = syscall.SIGKILL
+		} else {
+			mr.Log.Notice("Received signal %s, passing to running processes (if any)...", sig)
+			mr.Log.Notice("(Hint: if any processes are stuck, send SIGTERM for force-killing them)")
+			mr.signalled = true
+		}
+		dworld.Shutdown(sig)
+		// TODO (misha): Catch the exit code from the currently running program(s) and
+		// propagate it from here.
 		os.Exit(0)
 	}()
 

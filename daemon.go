@@ -95,10 +95,10 @@ func (d *daemon) Restart() {
 }
 
 func (d *daemon) Shutdown(sig os.Signal) error {
-	d.log.Notice(">> stopping")
+	d.log.Notice(">> stopping via signal %s", sig)
 	d.stop = true
 	if d.ex != nil {
-		return d.ex.Stop()
+		return d.ex.Signal(sig)
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func testCmd(t *testing.T, shell string, ct cmdTest) {
 	}
 
 	if ct.kill {
-		err := exec.Stop()
+		err := exec.Signal(syscall.SIGKILL)
 		if err != nil {
 			t.Errorf("Error stopping: %s", err)
 			return
