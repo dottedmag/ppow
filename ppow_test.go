@@ -1,7 +1,6 @@
 package ppow
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -35,7 +34,7 @@ func touch(p string) {
 	if err := f.Close(); err != nil {
 		panic(err)
 	}
-	ioutil.ReadFile(p)
+	os.ReadFile(p)
 }
 
 func events(p string) []string {

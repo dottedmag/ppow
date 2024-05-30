@@ -1,7 +1,6 @@
 package varcmd
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -64,7 +63,7 @@ func TestVarCmd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MkdirAll: %v", err)
 	}
-	err = ioutil.WriteFile(path.Join(dst, "tfile"), []byte("test"), 0777)
+	err = os.WriteFile(path.Join(dst, "tfile"), []byte("test"), 0777)
 	if err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
