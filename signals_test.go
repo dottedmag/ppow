@@ -201,14 +201,3 @@ func TestSignals(t *testing.T) {
 		})
 	}
 }
-
-func TestPassingSignals(t *testing.T) {
-	//	for sig := range []syscall.Signal{syscall.SIGWINCH} {
-	//	}
-}
-
-func TestDoubleSigterm(t *testing.T) {
-}
-
-func TestUnresponsiveKill(t *testing.T) {
-}
