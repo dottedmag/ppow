@@ -109,6 +109,14 @@ func (d *daemon) Shutdown(sig os.Signal) error {
 	return nil
 }
 
+func (d *daemon) Signal(sig os.Signal) error {
+	d.log.Notice(">> sending signal %s", sig)
+	if d.ex != nil {
+		return d.ex.Signal(sig)
+	}
+	return nil
+}
+
 // DaemonPen is a group of daemons in a single block, managed as a unit.
 type DaemonPen struct {
 	daemons []*daemon
@@ -171,6 +179,16 @@ func (dp *DaemonPen) Shutdown(sig os.Signal) {
 	}
 }
 
+func (dp *DaemonPen) Signal(sig os.Signal) {
+	dp.Lock()
+	defer dp.Unlock()
+	if dp.daemons != nil {
+		for _, d := range dp.daemons {
+			d.Signal(sig)
+		}
+	}
+}
+
 // DaemonWorld represents the entire world of daemons
 type DaemonWorld struct {
 	DaemonPens []*DaemonPen
@@ -194,5 +212,11 @@ func NewDaemonWorld(cnf *conf.Config, log termlog.TermLog) (*DaemonWorld, error)
 func (dw *DaemonWorld) Shutdown(s os.Signal) {
 	for _, dp := range dw.DaemonPens {
 		dp.Shutdown(s)
+	}
+}
+
+func (dw *DaemonWorld) Signal(s os.Signal) {
+	for _, dp := range dw.DaemonPens {
+		dp.Signal(s)
 	}
 }

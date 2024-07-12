@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/cortesi/moddwatch v0.1.0
+	github.com/dottedmag/must v1.0.0
 	github.com/dottedmag/termlog v0.0.0-20240528075215-28dda1a094f5
 	github.com/google/go-cmp v0.6.0
 	github.com/spf13/pflag v1.0.5
