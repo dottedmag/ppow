@@ -10,7 +10,6 @@ import (
 
 	"github.com/cortesi/moddwatch"
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/utils"
 	"github.com/dottedmag/termlog"
 )
 
@@ -51,7 +50,7 @@ func events(p string) []string {
 }
 
 func _testWatch(t *testing.T, modfunc func(), expected []string) {
-	defer utils.WithTempDir(t)()
+	defer withTempDir(t)()
 
 	err := os.MkdirAll("a/inner", 0777)
 	if err != nil {

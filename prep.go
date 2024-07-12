@@ -5,9 +5,6 @@ import (
 
 	"github.com/cortesi/moddwatch"
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/notify"
-	"github.com/dottedmag/ppow/shell"
-	"github.com/dottedmag/ppow/varcmd"
 	"github.com/dottedmag/termlog"
 )
 
@@ -24,7 +21,7 @@ func (p ProcError) Error() string {
 // RunProc runs a process to completion, sending output to log
 func RunProc(cmd string, shellMethod string, dir string, log termlog.Stream) error {
 	log.Header()
-	ex, err := shell.NewExecutor(shellMethod, cmd, dir)
+	ex, err := NewExecutor(shellMethod, cmd, dir)
 	if err != nil {
 		return err
 	}
@@ -46,10 +43,10 @@ func RunPreps(
 	vars map[string]string,
 	mod *moddwatch.Mod,
 	log termlog.TermLog,
-	notifiers []notify.Notifier,
+	notifiers []Notifier,
 	initial bool,
 ) error {
-	sh, err := shell.GetShellName(vars[shellVarName])
+	sh, err := GetShellName(vars[shellVarName])
 	if err != nil {
 		return err
 	}
@@ -59,7 +56,7 @@ func RunPreps(
 		modified = mod.All()
 	}
 
-	vcmd := varcmd.VarCmd{Block: &b, Modified: modified, Vars: vars}
+	vcmd := VarCmd{Block: &b, Modified: modified, Vars: vars}
 	for _, p := range b.Preps {
 		cmd, err := vcmd.Render(p.Command)
 		if initial && p.Onchange {

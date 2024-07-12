@@ -1,4 +1,4 @@
-package varcmd
+package ppow
 
 import (
 	"fmt"

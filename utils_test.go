@@ -1,4 +1,4 @@
-package utils
+package ppow
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 // this:
 //
 //	defer WithTempDir(t)()
-func WithTempDir(t *testing.T) func() {
+func withTempDir(t *testing.T) func() {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("TempDir: %v", err)

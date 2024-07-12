@@ -10,8 +10,6 @@ import (
 
 	"github.com/cortesi/moddwatch"
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/notify"
-	"github.com/dottedmag/ppow/shell"
 	"github.com/dottedmag/termlog"
 )
 
@@ -58,12 +56,12 @@ type ModRunner struct {
 	Config     *conf.Config
 	ConfPath   string
 	ConfReload bool
-	Notifiers  []notify.Notifier
+	Notifiers  []Notifier
 	signalled  bool
 }
 
 // NewModRunner constructs a new ModRunner
-func NewModRunner(confPath string, log termlog.TermLog, notifiers []notify.Notifier, confreload bool) (*ModRunner, error) {
+func NewModRunner(confPath string, log termlog.TermLog, notifiers []Notifier, confreload bool) (*ModRunner, error) {
 	mr := &ModRunner{
 		Log:        log,
 		ConfPath:   confPath,
@@ -88,7 +86,7 @@ func (mr *ModRunner) ReadConfig() error {
 		return fmt.Errorf("Error reading config file %s: %s", mr.ConfPath, err)
 	}
 
-	if _, err := shell.GetShellName(newcnf.GetVariables()[shellVarName]); err != nil {
+	if _, err := GetShellName(newcnf.GetVariables()[shellVarName]); err != nil {
 		return err
 	}
 

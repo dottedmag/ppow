@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/dottedmag/ppow"
-	"github.com/dottedmag/ppow/notify"
 	"github.com/dottedmag/termlog"
 	"github.com/spf13/pflag"
 )
@@ -39,9 +38,9 @@ func main() {
 		log.Enable("debug")
 	}
 
-	notifiers := []notify.Notifier{}
+	notifiers := []ppow.Notifier{}
 	if *doNotify {
-		n := notify.PlatformNotifier()
+		n := ppow.PlatformNotifier()
 		if n == nil {
 			log.Shout("Could not find a desktop notifier")
 		} else {
@@ -49,7 +48,7 @@ func main() {
 		}
 	}
 	if *beep {
-		notifiers = append(notifiers, &notify.BeepNotifier{})
+		notifiers = append(notifiers, &ppow.BeepNotifier{})
 	}
 
 	mr, err := ppow.NewModRunner(*file, log, notifiers, !(*noConf))

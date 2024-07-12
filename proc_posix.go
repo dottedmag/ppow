@@ -1,6 +1,6 @@
-// +build !windows
+//go:build !windows
 
-package shell
+package ppow
 
 import (
 	"os"

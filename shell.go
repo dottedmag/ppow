@@ -1,7 +1,6 @@
-package shell
+package ppow
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -153,18 +152,6 @@ func (e *Executor) Signal(sig os.Signal) error {
 		return fmt.Errorf("executor not running")
 	}
 	return e.sendSignal(sig)
-}
-
-func logOutput(wg *sync.WaitGroup, fp io.ReadCloser, out func(string, ...interface{})) {
-	defer wg.Done()
-	r := bufio.NewReader(fp)
-	for {
-		line, _, err := r.ReadLine()
-		if err != nil {
-			return
-		}
-		out("%s", string(line))
-	}
 }
 
 // CheckShell checks that a shell is supported, and returns the correct command name

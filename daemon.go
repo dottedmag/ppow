@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/shell"
-	"github.com/dottedmag/ppow/varcmd"
 	"github.com/dottedmag/termlog"
 )
 
@@ -29,7 +27,7 @@ type daemon struct {
 	conf  conf.Daemon
 	indir string
 
-	ex    *shell.Executor
+	ex    *Executor
 	log   termlog.Stream
 	shell string
 	stop  bool
@@ -85,7 +83,7 @@ func (d *daemon) Restart() {
 	d.Lock()
 	defer d.Unlock()
 	if d.ex == nil {
-		ex, err := shell.NewExecutor(d.shell, d.conf.Command, d.indir)
+		ex, err := NewExecutor(d.shell, d.conf.Command, d.indir)
 		if err != nil {
 			d.log.Shout("Could not create executor: %s", err)
 		}
@@ -121,7 +119,7 @@ type DaemonPen struct {
 func NewDaemonPen(block conf.Block, vars map[string]string, log termlog.TermLog) (*DaemonPen, error) {
 	d := make([]*daemon, len(block.Daemons))
 	for i, dmn := range block.Daemons {
-		vcmd := varcmd.VarCmd{Block: nil, Modified: nil, Vars: vars}
+		vcmd := VarCmd{Block: nil, Modified: nil, Vars: vars}
 		finalcmd, err := vcmd.Render(dmn.Command)
 		if err != nil {
 			return nil, err
@@ -136,7 +134,7 @@ func NewDaemonPen(block conf.Block, vars map[string]string, log termlog.TermLog)
 				return nil, err
 			}
 		}
-		sh, err := shell.GetShellName(vars[shellVarName])
+		sh, err := GetShellName(vars[shellVarName])
 		if err != nil {
 			return nil, err
 		}

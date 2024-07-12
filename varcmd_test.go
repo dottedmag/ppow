@@ -1,4 +1,4 @@
-package varcmd
+package ppow
 
 import (
 	"os"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/dottedmag/ppow/conf"
-	"github.com/dottedmag/ppow/utils"
 )
 
 var quotePathTests = []struct {
@@ -56,7 +55,7 @@ func TestRender(t *testing.T) {
 }
 
 func TestVarCmd(t *testing.T) {
-	defer utils.WithTempDir(t)()
+	defer withTempDir(t)()
 
 	dst := path.Join("./tdir")
 	err := os.MkdirAll(dst, 0777)
