@@ -14,11 +14,14 @@ import (
 
 const (
 	// MinRestart is the minimum amount of time between daemon restarts
-	MinRestart = 500 * time.Millisecond
+	MinRestart = 10 * time.Millisecond
 	// MulRestart is the exponential backoff multiplier applied when the daemon exits uncleanly
-	MulRestart = 2
+	MulRestart = 1.5
 	// MaxRestart is the maximum amount of time between daemon restarts
-	MaxRestart = 8 * time.Second
+	MaxRestart = 500 * time.Millisecond
+
+	// How many times in a row should the subprocess exit to trigger backoff
+	maxFails = 100
 )
 
 // A single daemon
@@ -36,6 +39,7 @@ type daemon struct {
 func (d *daemon) Run() {
 	var lastStart time.Time
 	delay := MinRestart
+	fails := 0
 	for d.stop != true {
 		if delay > MinRestart {
 			d.log.Notice(">> restart backoff... %dms", delay/time.Millisecond)
@@ -62,11 +66,15 @@ func (d *daemon) Run() {
 		// If we exited cleanly, or the process ran for > MaxRestart, we reset
 		// the delay timer
 		if time.Now().Sub(lastStart) > MaxRestart {
+			fails = 0
 			delay = MinRestart
 		} else {
-			delay *= MulRestart
-			if delay > MaxRestart {
-				delay = MaxRestart
+			fails++
+			if fails > maxFails {
+				delay = time.Duration(float64(delay) * MulRestart)
+				if delay > MaxRestart {
+					delay = MaxRestart
+				}
 			}
 		}
 	}
