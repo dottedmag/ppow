@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package conf
@@ -14,17 +15,17 @@ var parsePosixTests = []struct {
 	{
 		"",
 		"{\ndaemon +sigusr1: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGUSR1}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGUSR1, nil}}}}},
 	},
 	{
 		"",
 		"{\ndaemon +sigusr2: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGUSR2}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGUSR2, nil}}}}},
 	},
 	{
 		"",
 		"{\ndaemon +sigwinch: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGWINCH}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGWINCH, nil}}}}},
 	},
 }
 

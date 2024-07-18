@@ -120,7 +120,7 @@ var parseTests = []struct {
 			Blocks: []Block{
 				{
 					Include: []string{"foo"},
-					Daemons: []Daemon{{"command", syscall.SIGHUP}},
+					Daemons: []Daemon{{"command", syscall.SIGHUP, nil}},
 				},
 			},
 		},
@@ -130,29 +130,34 @@ var parseTests = []struct {
 		"{\ndaemon +sighup: c\n}",
 		&Config{
 			Blocks: []Block{
-				{Daemons: []Daemon{{"c", syscall.SIGHUP}}},
+				{Daemons: []Daemon{{"c", syscall.SIGHUP, nil}}},
 			},
 		},
 	},
 	{
 		"",
 		"{\ndaemon +sigterm: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGTERM}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGTERM, nil}}}}},
 	},
 	{
 		"",
 		"{\ndaemon +sigint: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGINT}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGINT, nil}}}}},
 	},
 	{
 		"",
 		"{\ndaemon +sigkill: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGKILL}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGKILL, nil}}}}},
 	},
 	{
 		"",
 		"{\ndaemon +sigquit: c\n}",
-		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGQUIT}}}}},
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGQUIT, nil}}}}},
+	},
+	{
+		"",
+		"{\ndaemon +sigquit->sigterm +sigterm->sigusr1: c\n}",
+		&Config{Blocks: []Block{{Daemons: []Daemon{{"c", syscall.SIGHUP, map[os.Signal]os.Signal{syscall.SIGQUIT: syscall.SIGTERM, syscall.SIGTERM: syscall.SIGUSR1}}}}}},
 	},
 	{
 		"",
@@ -359,8 +364,10 @@ var parseErrorTests = []struct {
 	{"foo { daemon: \n }", "test:1: empty command specification"},
 	{"foo { daemon: \" }", "test:1: unterminated quoted string"},
 	{"foo { daemon *: foo }", "test:1: invalid syntax"},
-	{"foo { daemon +invalid: foo }", "test:1: unknown option: +invalid"},
-	{"foo { prep +invalid: foo }", "test:1: unknown option: +invalid"},
+	{"foo { daemon +invalid: foo }", "test:1: unknown signal: invalid"},
+	{"foo { prep +invalid: foo }", "test:1: unknown signal: +invalid"},
+	{"foo { prep +sigterm->sigbaa: foo }", "test:1: unknown signal: +sigterm->sigbaa"},
+	{"foo { prep +sigboo->sigusr1: foo }", "test:1: unknown signal: +sigboo->sigusr1"},
 	{"@foo bar {}", "test:1: Expected ="},
 	{"@foo =", "test:1: unterminated variable assignment"},
 	{"@foo=bar\n@foo=bar {}", "test:2: variable @foo shadows previous declaration"},

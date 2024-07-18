@@ -318,6 +318,20 @@ The following signals are supported: **sighup**, **sigterm**, **sigint**,
 Support for signals on Windows is limited. The signal type is ignored, and all
 daemons are stopped and restarted when a signal would normally be sent.
 
+Another option is signal mapping: signal delivered to ppow may be changed
+before being sent to the daemon:
+
+```
+daemon +sighup->sigint: mydaemon --config ./foo.conf
+```
+
+The list of allowed signals is the same. An example where it is useful:
+running `ppow` under `tmux`. `tmux` sends SIGHUP to processes running
+inside it when it exits, however not all processes react to SIGHUP by
+exiting, thus they will be left running. Therefore they need need to
+be signalled in a different manner. Adding `+sighup->sigterm` option
+to these processes makes `tmux destroy` properly kill all these processes.
+
 The following variables are automatically generated for prep commands
 
 Variable      | Meaning

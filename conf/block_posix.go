@@ -1,11 +1,24 @@
-// +build  !windows
+//go:build !windows
 
 package conf
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"syscall"
 )
+
+var strSignals = map[string]os.Signal{
+	"sighup":   syscall.SIGHUP,
+	"sigterm":  syscall.SIGTERM,
+	"sigint":   syscall.SIGINT,
+	"sigkill":  syscall.SIGKILL,
+	"sigquit":  syscall.SIGQUIT,
+	"sigusr1":  syscall.SIGUSR1,
+	"sigusr2":  syscall.SIGUSR2,
+	"sigwinch": syscall.SIGWINCH,
+}
 
 func (b *Block) addDaemon(command string, options []string) error {
 	if b.Daemons == nil {
@@ -16,25 +29,30 @@ func (b *Block) addDaemon(command string, options []string) error {
 		RestartSignal: syscall.SIGHUP,
 	}
 	for _, v := range options {
-		switch v {
-		case "+sighup":
-			d.RestartSignal = syscall.SIGHUP
-		case "+sigterm":
-			d.RestartSignal = syscall.SIGTERM
-		case "+sigint":
-			d.RestartSignal = syscall.SIGINT
-		case "+sigkill":
-			d.RestartSignal = syscall.SIGKILL
-		case "+sigquit":
-			d.RestartSignal = syscall.SIGQUIT
-		case "+sigusr1":
-			d.RestartSignal = syscall.SIGUSR1
-		case "+sigusr2":
-			d.RestartSignal = syscall.SIGUSR2
-		case "+sigwinch":
-			d.RestartSignal = syscall.SIGWINCH
-		default:
-			return fmt.Errorf("unknown option: %s", v)
+		v = strings.TrimPrefix(v, "+")
+		if strings.Contains(v, "->") {
+			strFrom, strTo, ok := strings.Cut(v, "->")
+			if !ok {
+				return fmt.Errorf("unknown signal mapping: %s", v)
+			}
+			from := strSignals[strFrom]
+			if from == nil {
+				return fmt.Errorf("unknown signal: %s", strFrom)
+			}
+			to := strSignals[strTo]
+			if to == nil {
+				return fmt.Errorf("unknown signal: %s", strTo)
+			}
+			if d.SignalMapping == nil {
+				d.SignalMapping = map[os.Signal]os.Signal{}
+			}
+			d.SignalMapping[from] = to
+		} else {
+			sig := strSignals[v]
+			if sig == nil {
+				return fmt.Errorf("unknown signal: %s", v)
+			}
+			d.RestartSignal = sig
 		}
 	}
 	b.Daemons = append(b.Daemons, d)

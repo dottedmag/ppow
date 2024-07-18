@@ -103,6 +103,11 @@ func (d *daemon) Restart() {
 func (d *daemon) Shutdown(sig os.Signal) error {
 	d.log.Notice(">> stopping via signal %s", sig)
 	d.stop = true
+	if d.conf.SignalMapping != nil {
+		if repl, ok := d.conf.SignalMapping[sig]; ok {
+			sig = repl
+		}
+	}
 	if d.ex != nil {
 		return d.ex.Signal(sig)
 	}
@@ -111,6 +116,11 @@ func (d *daemon) Shutdown(sig os.Signal) error {
 
 func (d *daemon) Signal(sig os.Signal) error {
 	d.log.Notice(">> sending signal %s", sig)
+	if d.conf.SignalMapping != nil {
+		if repl, ok := d.conf.SignalMapping[sig]; ok {
+			sig = repl
+		}
+	}
 	if d.ex != nil {
 		return d.ex.Signal(sig)
 	}

@@ -297,6 +297,15 @@ func (l *lexer) acceptWord() {
 	)
 }
 
+// acceptWord accepts a lowercase word
+func (l *lexer) acceptWordOrArrow() {
+	l.acceptFunc(
+		func(r rune) bool {
+			return any(r, wordRunes) || r == '-' || r == '>'
+		},
+	)
+}
+
 // acceptQuotedString accepts a quoted string
 func (l *lexer) acceptQuotedString(quote rune) error {
 Loop:
@@ -453,7 +462,7 @@ func lexOptions(l *lexer) stateFn {
 			l.emit(itemColon)
 			return lexCommand
 		} else if n == '+' {
-			l.acceptWord()
+			l.acceptWordOrArrow()
 			l.emit(itemBareString)
 		} else {
 			l.errorf("invalid command option")

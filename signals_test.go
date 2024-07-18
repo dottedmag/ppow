@@ -200,4 +200,39 @@ func TestSignals(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("sigint->sigusr1", func(t *testing.T) {
+		must.OK(os.WriteFile(conf, []byte(`**.go {
+    daemon +sigusr1->sigusr2: ./testbin
+}`), 0o644))
+
+		cmdRunPpow := exec.Command("./ppow")
+		cmdRunPpow.Dir = d
+
+		cmdRunPpow.Stdout = must.OK1(os.Create(stdoutFile))
+		cmdRunPpow.Stderr = os.Stderr
+
+		must.OK(cmdRunPpow.Start())
+		defer cmdRunPpow.Process.Signal(syscall.SIGKILL)
+
+		// Give ppow time to start itself and subprocess
+		time.Sleep(100 * time.Millisecond)
+		must.OK(cmdRunPpow.Process.Signal(syscall.SIGUSR1))
+		time.Sleep(100 * time.Millisecond)
+		must.OK(cmdRunPpow.Process.Signal(syscall.SIGUSR1))
+		time.Sleep(100 * time.Millisecond)
+		must.OK(cmdRunPpow.Process.Signal(syscall.SIGTERM))
+
+		cmdRunPpow.Wait()
+
+		// Give subprocesses time to exit
+		time.Sleep(100 * time.Millisecond)
+
+		stdout := string(must.OK1(os.ReadFile(stdoutFile)))
+
+		if strings.Count(stdout, fmt.Sprintf("default handler %s", syscall.SIGUSR2)) != 2 {
+			fmt.Println(stdout)
+			t.Fail()
+		}
+	})
 }

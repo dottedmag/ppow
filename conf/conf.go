@@ -10,6 +10,7 @@ import (
 type Daemon struct {
 	Command       string
 	RestartSignal os.Signal
+	SignalMapping map[os.Signal]os.Signal
 }
 
 // A Prep runs and terminates
@@ -40,7 +41,7 @@ func (b *Block) addPrep(command string, options []string) error {
 		case "+onchange":
 			onchange = true
 		default:
-			return fmt.Errorf("unknown option: %s", v)
+			return fmt.Errorf("unknown signal: %s", v)
 		}
 	}
 
