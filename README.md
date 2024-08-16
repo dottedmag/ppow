@@ -105,6 +105,8 @@ By default ppow interprets commands using a [built-in POSIX-like
 shell](https://github.com/mvdan/sh). Some external shells are also supported,
 and can be used by setting `@shell` variable in your "ppow.conf" file.
 
+If ppow can't find `ppow.conf` in the current directory it will try to read
+`modd.conf` for backward compatibility with `modd`.
 
 # File watch patterns
 

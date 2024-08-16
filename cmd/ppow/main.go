@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	file := pflag.StringP("file", "f", "ppow.conf", "Path to modfile")
+	file := pflag.StringP("file", "f", "", "Path to modfile (defaults to ppow.conf with fallback to mmod.conf if not specified)")
 	noConf := pflag.BoolP("noconf", "c", false, "Don't watch our own config file")
 	beep := pflag.BoolP("bell", "b", false, "Ring terminal bell if any command returns an error")
 	ignores := pflag.BoolP("ignores", "i", false, "List default ignore patterns and exit")
@@ -51,6 +51,13 @@ func main() {
 		notifiers = append(notifiers, &ppow.BeepNotifier{})
 	}
 
+	if *file == "" && fileExists("ppow.conf") {
+		*file = "ppow.conf"
+	}
+	if *file == "" && fileExists("modd.conf") {
+		*file = "modd.conf"
+	}
+
 	mr, err := ppow.NewModRunner(*file, log, notifiers, !(*noConf))
 	if err != nil {
 		log.Shout("%s", err)
@@ -68,4 +75,9 @@ func main() {
 			log.Shout("%s", err)
 		}
 	}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
